@@ -1,5 +1,5 @@
 using System;
-using SamplePlugin.Shared;
+using ProxyPlayer.Shared;
 
 namespace ProxyPlayer.Utility
 {

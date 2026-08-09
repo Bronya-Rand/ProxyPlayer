@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 using ProxyPlayer.Media;
-using SamplePlugin.Shared;
+using ProxyPlayer.Shared;
 
 namespace ProxyPlayer.Models
 {

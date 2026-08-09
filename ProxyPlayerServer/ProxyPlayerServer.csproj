@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Version>1.0.0.0</Version>
     <Author>Bronya Rand</Author>
@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <Compile Include="..\ProxyPlayer\Shared\MediaState.cs" Link="Shared\MediaState.cs" />
+    <Compile Include="..\ProxyPlayer\Shared\ProxyPlayerJsonContext.cs" Link="ProxyPlayerJsonContext.cs" />
   </ItemGroup>
 
   <ItemGroup>

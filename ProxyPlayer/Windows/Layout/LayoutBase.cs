@@ -5,8 +5,8 @@ using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using ProxyPlayer.Media;
 using ProxyPlayer.Models;
+using ProxyPlayer.Shared;
 using ProxyPlayer.Utility;
-using SamplePlugin.Shared;
 
 namespace ProxyPlayer.Windows.Layout
 {

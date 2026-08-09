@@ -24,7 +24,7 @@ catch (AbandonedMutexException)
 
 if (!acquired)
 {
-    Console.WriteLine("Another instance of MediaProxy is already running. Exiting.");
+    DebugLog.Write("Another instance of MediaProxy is already running. Exiting.");
     return;
 }
 
@@ -36,8 +36,12 @@ try
     var server = new PipeServer(mediaService);
     server.Start();
 
-    Console.WriteLine("MediaProxy server is running. Press Ctrl+C to exit.");
+    DebugLog.Write("MediaProxy server started successfully.");
     await Task.Delay(Timeout.Infinite);
+}
+catch (Exception ex)
+{
+    DebugLog.Write($"MediaProxy server encountered an error: {ex}");
 }
 finally
 {

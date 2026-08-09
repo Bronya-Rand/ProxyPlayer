@@ -6,8 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using ProxyPlayer;
-using SamplePlugin.Shared;
+using ProxyPlayer.Shared;
 
 namespace ProxyPlayer.Media
 {
@@ -57,6 +56,7 @@ namespace ProxyPlayer.Media
                     using var pipeClient = new NamedPipeClientStream(".", StatePipeName, PipeDirection.In, PipeOptions.Asynchronous);
                     await pipeClient.ConnectAsync(cancellationToken); // Wait for the server to connect
                     IsConnected = true;
+                    Plugin.Log.Debug("State pipe connected");
 
                     while (pipeClient.IsConnected && !cancellationToken.IsCancellationRequested)
                     {
@@ -68,8 +68,8 @@ namespace ProxyPlayer.Media
                     }
                 }
                 catch (OperationCanceledException) { }
-                catch (TimeoutException) { /* proxy not running */ }
-                catch (IOException) { /* server disconnected */ }
+                catch (TimeoutException) { Plugin.Log.Debug("State pipe timeout"); }
+                catch (IOException) { Plugin.Log.Debug("State pipe disconnected"); }
                 catch (Exception ex)
                 {
                     Plugin.Log.Warning(ex, "Unexpected error in state receive loop");
@@ -119,7 +119,7 @@ namespace ProxyPlayer.Media
         }
         private static async Task WriteMessageAsync<T>(Stream stream, T value, CancellationToken cancellationToken)
         {
-            var json = JsonSerializer.Serialize(value);
+            var json = JsonSerializer.Serialize(value, typeof(T), ProxyPlayerJsonContext.Default);
             var bytes = Encoding.UTF8.GetBytes(json);
             await stream.WriteAsync(BitConverter.GetBytes(bytes.Length), cancellationToken);
             await stream.WriteAsync(bytes, cancellationToken);
@@ -134,7 +134,7 @@ namespace ProxyPlayer.Media
 
             var jsonBuffer = new byte[jsonLength];
             if (!await ReadExactAsync(stream, jsonBuffer, cancellationToken)) return default;
-            var payload = JsonSerializer.Deserialize<T>(jsonBuffer);
+            var payload = (T?)JsonSerializer.Deserialize(jsonBuffer, typeof(T), ProxyPlayerJsonContext.Default);
             if (payload == null) return null;
 
             var blobCountBuffer = new byte[4];

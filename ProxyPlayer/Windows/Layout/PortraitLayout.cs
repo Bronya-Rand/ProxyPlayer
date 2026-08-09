@@ -3,7 +3,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
 using ProxyPlayer.Media;
-using SamplePlugin.Shared;
+using ProxyPlayer.Shared;
 
 namespace ProxyPlayer.Windows.Layout
 {

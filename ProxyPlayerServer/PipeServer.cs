@@ -1,7 +1,7 @@
 using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
-using SamplePlugin.Shared;
+using ProxyPlayer.Shared;
 
 namespace ProxyPlayerServer
 {
@@ -55,37 +55,15 @@ namespace ProxyPlayerServer
 
                     await WriteStatePipeAsync(pipeServer, BuildState(), cancellationToken);
 
-                    while (!cancellationToken.IsCancellationRequested)
+                    while (!cancellationToken.IsCancellationRequested && pipeServer.IsConnected)
                     {
-                        if (!pipeServer.IsConnected) break;
-
-                        try
-                        {
-                            // Check if the pipe is not dead
-                            await statePipeWriteLock.WaitAsync(cancellationToken);
-                            try
-                            {
-                                await pipeServer.WriteAsync(Array.Empty<byte>(), cancellationToken);
-                            }
-                            finally
-                            {
-                                statePipeWriteLock.Release();
-                            }
-                        }
-                        catch (IOException)
-                        {
-                            // The pipe is dead, break the loop to wait for a new connection
-                            break;
-                        }
                         await Task.Delay(TaskDelayMilliseconds, cancellationToken);
                     }
                 }
                 catch (OperationCanceledException) { }
-                catch (IOException) { /* client disconnected */ }
-                finally
-                {
-                    currentStatePipe = null;
-                }
+                catch (IOException ex) { DebugLog.Write("State pipe client disconnected", ex); }
+                catch (Exception ex) { DebugLog.Write("Unexpected error in RunStatePipeServerAsync", ex); }
+                finally { currentStatePipe = null; }
             }
         }
 
@@ -99,22 +77,13 @@ namespace ProxyPlayerServer
             if (pipe != null && pipe.IsConnected)
             {
                 try { await WriteStatePipeAsync(pipe, BuildState(), cts.Token); }
-                catch (IOException) { /* client disconnected */ }
+                catch (IOException ex) { DebugLog.Write($"BroadcastStateAsync: client disconnected", ex); }
+                catch (Exception ex) { DebugLog.Write($"Unexpected error in BroadcastStateAsync", ex); }
             }
         }
 
-        private async Task WriteStatePipeAsync(NamedPipeServerStream pipe, MessageEnvelope<MediaState> envelope, CancellationToken token)
-        {
-            await statePipeWriteLock.WaitAsync(token);
-            try
-            {
-                await WriteEnvelopeAsync(pipe, envelope, token);
-            }
-            finally
-            {
-                statePipeWriteLock.Release();
-            }
-        }
+        private static async Task WriteStatePipeAsync(NamedPipeServerStream pipe, MessageEnvelope<MediaState> envelope, CancellationToken token) =>
+            await WriteEnvelopeAsync(pipe, envelope, token);
 
         /// <summary>
         /// Listens for incoming command messages and executes the corresponding media control actions.
@@ -163,7 +132,7 @@ namespace ProxyPlayerServer
                     }
                 }
                 catch (OperationCanceledException) { }
-                catch (IOException) { /* client disconnected */ }
+                catch (IOException ex) { DebugLog.Write("Command pipe client disconnected", ex); }
             }
         }
 
@@ -203,15 +172,6 @@ namespace ProxyPlayerServer
         }
 
         // Framing: (JSON-only messages): 4-byte prefix + JSON
-        private static async Task WriteMessageAsync<T>(Stream stream, T message, CancellationToken token)
-        {
-            var json = JsonSerializer.Serialize(message);
-            var bytes = Encoding.UTF8.GetBytes(json);
-            var lengthPrefix = BitConverter.GetBytes(bytes.Length);
-            await stream.WriteAsync(lengthPrefix, token);
-            await stream.WriteAsync(bytes, token);
-            await stream.FlushAsync(token);
-        }
         private static async Task<T?> ReadMessageAsync<T>(Stream stream, CancellationToken token)
         {
             var lengthBuffer = new byte[4];
@@ -222,14 +182,14 @@ namespace ProxyPlayerServer
 
             var buffer = new byte[length];
             if (!await ReadExactAsync(stream, buffer, token)) return default;
-            return JsonSerializer.Deserialize<T>(buffer);
+            return (T?)JsonSerializer.Deserialize(buffer, typeof(T), ProxyPlayerJsonContext.Default);
         }
 
         // Framing: (Envelope messages for state): 4B json length + json + 4B blob
         // count + repeated: [4B blob key length] + [blob key utf8] + [4B blob length] + [blob bytes]
         private static async Task WriteEnvelopeAsync<T>(Stream stream, MessageEnvelope<T> envelope, CancellationToken token)
         {
-            var json = JsonSerializer.Serialize(envelope.Payload);
+            var json = JsonSerializer.Serialize(envelope.Payload, typeof(T), ProxyPlayerJsonContext.Default);
             var jsonBytes = Encoding.UTF8.GetBytes(json);
 
             await stream.WriteAsync(BitConverter.GetBytes(jsonBytes.Length), token);

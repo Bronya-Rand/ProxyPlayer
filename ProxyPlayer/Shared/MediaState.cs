@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SamplePlugin.Shared;
+namespace ProxyPlayer.Shared;
 
 public enum MediaCommand
 {

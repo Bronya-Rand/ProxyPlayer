@@ -1,12 +1,10 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Utility;
-using ProxyPlayer;
 
 namespace ProxyPlayer.Media
 {
@@ -15,6 +13,7 @@ namespace ProxyPlayer.Media
     /// </summary>
     public sealed class ProxyProcessManager : IDisposable
     {
+        private const string ProxyServerMutexName = "Local\\ProxyPlayerServer.SingleInstance";
         private static FileInfo ProxyServerPath => new(Path.Combine(Plugin.PluginInterface.AssemblyLocation.Directory!.FullName, "Resources/binaries", "ProxyPlayerServer.exe"));
         private Process? process;
 
@@ -33,7 +32,7 @@ namespace ProxyPlayer.Media
         }
         private async Task StartProxyServer()
         {
-            if (await IsProxyServerReachableAsync())
+            if (IsProxyServerReachableAsync())
             {
                 Plugin.Log.Info("ProxyPlayerServer is already running");
                 return;
@@ -57,19 +56,14 @@ namespace ProxyPlayer.Media
                 Plugin.Log.Error(ex, "Failed to start ProxyPlayerServer");
             }
         }
-        private static async Task<bool> IsProxyServerReachableAsync()
+        private static bool IsProxyServerReachableAsync()
         {
-            try
+            if (Mutex.TryOpenExisting(ProxyServerMutexName, out var mutex))
             {
-                using var probe = new NamedPipeClientStream(".", "ProxyPlayerStatePipe", PipeDirection.In);
-                using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
-                await probe.ConnectAsync(cts.Token);
+                mutex.Dispose();
                 return true;
             }
-            catch
-            {
-                return false;
-            }
+            return false;
         }
         public void Dispose()
         {

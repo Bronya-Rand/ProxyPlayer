@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dalamud.Interface.Textures.TextureWraps;
-using ProxyPlayer;
 
 namespace ProxyPlayer.Media
 {
@@ -29,7 +28,7 @@ namespace ProxyPlayer.Media
                 entry.LastBytes.AsSpan().SequenceEqual(bytes.AsSpan()))
                 return;
 
-                entry.LastBytes = bytes;
+            entry.LastBytes = bytes;
             entry.Generation++; // Invalidate any load for this key
 
             entry.Texture?.Dispose();
