@@ -15,7 +15,7 @@ namespace ProxyPlayer.Media
     /// </summary>
     public sealed class ProxyProcessManager : IDisposable
     {
-        private static FileInfo ProxyServerPath => new(Path.Combine(Plugin.PluginInterface.AssemblyLocation.Directory!.FullName, "Resources/bin", "ProxyPlayerServer.exe"));
+        private static FileInfo ProxyServerPath => new(Path.Combine(Plugin.PluginInterface.AssemblyLocation.Directory!.FullName, "Resources/binaries", "ProxyPlayerServer.exe"));
         private Process? process;
 
         public ProxyProcessManager()

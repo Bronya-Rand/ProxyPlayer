@@ -29,12 +29,9 @@ ProxyPlayer comes with either a compact or portrait UI for displaying your media
   <ItemGroup>
     <PackageReference Update="DotNet.ReproducibleBuilds" Version="2.0.5" />
   </ItemGroup>
-  <Target Name="PublishProxyServer" BeforeTargets="BeforeBuild">
-    <MSBuild Projects="..\ProxyPlayerServer\ProxyPlayerServer.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(MSBuildThisFileDirectory)Resources\bin\;RuntimeIdentifier=win-x64;SelfContained=true" />
-  </Target>
 
   <ItemGroup>
-    <None Include="Resources\bin\ProxyPlayerServer.exe">
+    <None Include="Resources\binaries\ProxyPlayerServer.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

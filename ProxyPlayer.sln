@@ -4,9 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 18.8.12023.21
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProxyPlayer", "ProxyPlayer\ProxyPlayer.csproj", "{13C812E9-0D42-4B95-8646-40EEBF30636F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3EB2A744-C847-43C5-875C-0C7EA6814737} = {3EB2A744-C847-43C5-875C-0C7EA6814737}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProxyPlayerServer", "ProxyPlayerServer\ProxyPlayerServer.csproj", "{3EB2A744-C847-43C5-875C-0C7EA6814737}"
 EndProject
