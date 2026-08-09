@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+  <PropertyGroup>
+    <Version>1.0.0.0</Version>
+    <Author>Bronya Rand</Author>
+    <Company>Bronya Rand</Company>
+    <Name>ProxyPlayer</Name>
+    <Punchline>Control what's playing on your computer within XIV!</Punchline>
+    <Description>
+ProxyPlayer is a simple plugin that allows you to control your computer's media playback from within XIV.
+
+Control your media player from within the game, without having to alt-tab or use a second monitor.
+Features (depending on your media player):
+- Play/Pause
+- Next/Previous Track
+- Stop
+- Progress Bar
+- Cover Art Display
+- Metadata
+
+ProxyPlayer comes with either a compact or portrait UI for displaying your media information.
+    </Description>
+    <Tags>music,proxy,player,media,windows,smtc</Tags>
+    <CategoryTags>utility;ui;other</CategoryTags>
+    <PackageProjectUrl>https://github.com/Bronya-Rand/ProxyPlayer</PackageProjectUrl>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Update="DotNet.ReproducibleBuilds" Version="2.0.5" />
+  </ItemGroup>
+  <Target Name="PublishProxyServer" BeforeTargets="BeforeBuild">
+    <MSBuild Projects="..\ProxyPlayerServer\ProxyPlayerServer.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(MSBuildThisFileDirectory)Resources\bin\;RuntimeIdentifier=win-x64;SelfContained=true" />
+  </Target>
+
+  <ItemGroup>
+    <None Include="Resources\bin\ProxyPlayerServer.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
