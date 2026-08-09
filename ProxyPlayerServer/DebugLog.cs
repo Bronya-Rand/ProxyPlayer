@@ -19,5 +19,6 @@ namespace ProxyPlayerServer
             }
         }
         public static void Write(string message, Exception ex) => Write($"{message}{Environment.NewLine}{ex}");
+        public static void Flush() => File.WriteAllText(LogPath, string.Empty);
     }
 }

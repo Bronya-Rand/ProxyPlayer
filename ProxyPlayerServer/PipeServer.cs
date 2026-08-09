@@ -82,8 +82,12 @@ namespace ProxyPlayerServer
             }
         }
 
-        private static async Task WriteStatePipeAsync(NamedPipeServerStream pipe, MessageEnvelope<MediaState> envelope, CancellationToken token) =>
-            await WriteEnvelopeAsync(pipe, envelope, token);
+        private async Task WriteStatePipeAsync(NamedPipeServerStream pipe, MessageEnvelope<MediaState> envelope, CancellationToken token)
+        {
+            await statePipeWriteLock.WaitAsync(token);
+            try { await WriteEnvelopeAsync(pipe, envelope, token); }
+            finally { statePipeWriteLock.Release(); }
+        }
 
         /// <summary>
         /// Listens for incoming command messages and executes the corresponding media control actions.

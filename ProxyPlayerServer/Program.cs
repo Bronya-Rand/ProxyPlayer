@@ -10,6 +10,8 @@ using ProxyPlayerServer;
 const string MutexName = "Local\\ProxyPlayerServer.SingleInstance";
 using var singleInstanceMutex = new Mutex(false, MutexName, out var _);
 
+DebugLog.Flush();
+
 bool acquired;
 try
 {
