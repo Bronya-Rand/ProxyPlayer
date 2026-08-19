@@ -22,7 +22,7 @@ namespace ProxyPlayer.Windows
         {
             if (!isOpen) return;
 
-            var modalId = "Select Media Session###ProxyPlayerSessionList";
+            var modalId = "Select Music Source###ProxyPlayerSessionList";
             if (shouldOpenModal)
             {
                 ImGui.OpenPopup(modalId);
@@ -43,12 +43,12 @@ namespace ProxyPlayer.Windows
             var apps = state.AvailableAppIds;
             if (apps.Length == 0)
             {
-                ImGui.Text("No active media sessions found.");
+                ImGui.Text("No active music sources found.");
                 return;
             }
             else
             {
-                ImGui.Text("Select a media session:");
+                ImGui.Text("Select a music source:");
                 var selectedFriendlyName = state.SelectedAppId != null && state.AppFriendlyNames.TryGetValue(state.SelectedAppId, out var sName)
                     ? sName
                     : state.SelectedAppId ?? "Select app...";

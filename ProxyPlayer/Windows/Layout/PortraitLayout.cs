@@ -4,6 +4,7 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
 using ProxyPlayer.Media;
 using ProxyPlayer.Shared;
+using ProxyPlayer.Utility;
 
 namespace ProxyPlayer.Windows.Layout
 {
@@ -21,7 +22,7 @@ namespace ProxyPlayer.Windows.Layout
             // Centered App Name & Session Sync
             using (ImRaii.Group())
             {
-                var friendlyName = GetFriendlyAppName(mediaState);
+                var friendlyName = TrackMetadata.GetFriendlyAppName(mediaState);
 
                 var nameWidth = ImGui.CalcTextSize(friendlyName).X;
                 ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((availWidth - nameWidth) / 2));

@@ -80,9 +80,10 @@ public class MainWindow : Window, IDisposable
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((availWidth - (textWidth - 1)) / 2));
             ImGui.Text(NoSessionSelectedText);
 
-            var buttonWidth = ImGui.CalcTextSize("Select Session").X + 20; // Add some padding for the button
-            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((availWidth - buttonWidth) / 2));
-            if (ImGui.Button("Select Session###MainWindowSelectSession"))
+            var sourceButtonText = "Select Music Source";
+            var sourceButtonTextWidth = ImGui.CalcTextSize(sourceButtonText).X + 20; // Add some padding for the button
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((availWidth - sourceButtonTextWidth) / 2));
+            if (ImGui.Button($"{sourceButtonText}###MainWindowSelectSession"))
                 sessionListModal.Open();
             return;
         }

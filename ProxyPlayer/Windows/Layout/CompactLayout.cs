@@ -30,7 +30,7 @@ namespace ProxyPlayer.Windows.Layout
 
             using (ImRaii.Group())
             {
-                var friendlyName = GetFriendlyAppName(state);
+                var friendlyName = TrackMetadata.GetFriendlyAppName(state);
 
                 // App Name (or address)
                 ImGui.TextDisabled(friendlyName);

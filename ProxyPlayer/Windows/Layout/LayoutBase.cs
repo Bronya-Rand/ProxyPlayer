@@ -130,11 +130,5 @@ namespace ProxyPlayer.Windows.Layout
             if (ImPlayer.DrawClickableIcon($"select_session###{id}", FontAwesomeIcon.Sync, "Select Session"))
                 OnRequestSessionListOpen?.Invoke();
         }
-        public static string GetFriendlyAppName(MediaState mediaState)
-        {
-            if (mediaState.SelectedAppId != null && mediaState.AppFriendlyNames.TryGetValue(mediaState.SelectedAppId, out var name))
-                return name;
-            return mediaState.SelectedAppId ?? string.Empty;
-        }
     }
 }
