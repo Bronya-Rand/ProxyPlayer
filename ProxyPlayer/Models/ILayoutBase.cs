@@ -9,6 +9,6 @@ namespace ProxyPlayer.Models
     {
         Vector2 CoverArtDimensions { get; }
         Action? OnRequestSessionListOpen { get; set; }
-        void Draw(MediaState state, PipeClient pipeClient, TextureCache texture);
+        void Draw(MediaState state, IMediaSource mediaSource, TextureCache texture);
     }
 }

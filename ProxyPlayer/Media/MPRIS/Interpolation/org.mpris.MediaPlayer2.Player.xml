@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<node xmlns:tp="https://specifications.freedesktop.org/mpris/latest/Player_Interface.html">
+    <interface name="org.mpris.MediaPlayer2.Player">
+        <method name="Next"/>
+        <method name="Previous"/>
+        <method name="PlayPause"/>
+        <method name="Stop"/>
+        
+        <property name="PlaybackStatus" type="s" tp:type="Playback_Status" access="read">
+            <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+        </property>
+        <property name="LoopStatus" type="s" tp:type="Loop_Status" access="readwrite">
+            <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+        </property>
+        <property name="Shuffle" type="b" access="readwrite">
+            <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+        </property>
+        <property name="Metadata" type="a{sv}" access="read">
+            <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+        </property>
+        <property name="Position" type="x" tp:type="Time_In_Us" access="read">
+            <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+        </property>
+        <property name="CanGoNext" type="b" access="read">
+            <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+        </property>
+        <property name="CanGoPrevious" type="b" access="read">
+            <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+        </property>
+        <property name="CanPlay" type="b" access="read">
+            <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+        </property>
+        <property name="CanPause" type="b" access="read">
+            <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+        </property>
+    </interface>
+</node>

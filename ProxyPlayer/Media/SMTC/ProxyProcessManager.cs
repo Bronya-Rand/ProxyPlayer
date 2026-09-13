@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Utility;
 
-namespace ProxyPlayer.Media
+namespace ProxyPlayer.Media.SMTC
 {
     /// <summary>
     /// Manages the lifecycle of the ProxyPlayer process.

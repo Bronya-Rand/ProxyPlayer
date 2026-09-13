@@ -2,6 +2,7 @@ using System;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text;
 using Dalamud.Plugin.Services;
+using ProxyPlayer.Models;
 
 namespace ProxyPlayer.Media
 {
@@ -12,12 +13,12 @@ namespace ProxyPlayer.Media
     {
         private readonly IDtrBarEntry? dtrEntry;
         private readonly Plugin plugin;
-        private readonly PipeClient pipeClient;
+        private readonly IMediaSource mediaSource;
 
-        public DTRDisplay(Plugin plugin, PipeClient pipeClient)
+        public DTRDisplay(Plugin plugin, IMediaSource mediaSource)
         {
             this.plugin = plugin;
-            this.pipeClient = pipeClient;
+            this.mediaSource = mediaSource;
 
             if (Plugin.DtrBar.Get("ProxyPlayer") is { } entry)
             {
@@ -49,22 +50,25 @@ namespace ProxyPlayer.Media
             // Update the DTR bar string based on the current state of the pipe client
             // Obviously get only the first 9 characters of the song name to avoid overflow
             var seIcon = SeIconChar.AutoTranslateClose.ToIconString();
-            var tooltip = "ProxyPlayer server not running";
+            var tooltip = mediaSource.SourceName == "Windows SMTC"
+                ? "ProxyPlayer server not running."
+                : $"ProxyPlayer not connected to a {mediaSource.SourceName} session.";
+
             var dtrText = "Not Connected";
-            if (pipeClient.IsConnected)
+            if (mediaSource.IsConnected)
             {
-                if (pipeClient.CurrentState.SelectedAppId == null)
+                if (mediaSource.CurrentState.SelectedAppId == null)
                 {
                     dtrText = "No Session";
-                    tooltip = "No media session selected";
+                    tooltip = "No music source selected";
                 }
                 else
                 {
-                    var songName = pipeClient.CurrentState.Title.Length > Constants.MaxTitleLengthDtr
-                        ? pipeClient.CurrentState.Title[..(Constants.MaxTitleLengthDtr - 3)] + "..."
-                        : pipeClient.CurrentState.Title;
+                    var songName = mediaSource.CurrentState.Title.Length > Constants.MaxTitleLengthDtr
+                        ? mediaSource.CurrentState.Title[..(Constants.MaxTitleLengthDtr - 3)] + "..."
+                        : mediaSource.CurrentState.Title;
                     dtrText = songName;
-                    tooltip = pipeClient.CurrentState.Title;
+                    tooltip = mediaSource.CurrentState.Title;
                 }
             }
             dtrEntry.Text = $"{seIcon} {dtrText}";

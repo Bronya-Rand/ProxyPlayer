@@ -3,6 +3,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
 using ProxyPlayer.Media;
+using ProxyPlayer.Models;
 using ProxyPlayer.Shared;
 using ProxyPlayer.Utility;
 
@@ -13,7 +14,7 @@ namespace ProxyPlayer.Windows.Layout
     /// </summary>
     public sealed class CompactLayout : LayoutBase
     {
-        public override void Draw(MediaState state, PipeClient pipeClient, TextureCache textures)
+        public override void Draw(MediaState state, IMediaSource mediaSource, TextureCache textures)
         {
             var lineCount = string.IsNullOrEmpty(state.Album) ? 3 : 4;
             var lineHeight = ImGui.GetTextLineHeight();
@@ -50,7 +51,7 @@ namespace ProxyPlayer.Windows.Layout
             DrawProgressBar(state);
 
             // Playback controls
-            DrawPlaybackControlsCentered(state, pipeClient);
+            DrawPlaybackControlsCentered(state, mediaSource);
         }
     }
 }

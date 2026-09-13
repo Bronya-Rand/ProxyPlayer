@@ -8,44 +8,25 @@ using System.Threading;
 using System.Threading.Tasks;
 using ProxyPlayer.Shared;
 
-namespace ProxyPlayer.Media
+namespace ProxyPlayer.Media.SMTC
 {
     /// <summary>
     /// The client-side implementation of the named pipe communication with the ProxyPlayer process.
     /// </summary>
-    public sealed class PipeClient : IDisposable
+    public sealed class SMTCMediaSource : MediaSourceBase
     {
+        public override string SourceName => "Windows SMTC";
+
         private const string StatePipeName = "ProxyPlayerStatePipe";
         private const string CommandPipeName = "ProxyPlayerCommandPipe";
         private const int ProxyReconnectTimeout = 2000;
         private const int CommandPipeTimeout = 1000;
 
-        private readonly CancellationTokenSource cts = new();
         private readonly SemaphoreSlim commandLock = new(1, 1);
         private NamedPipeClientStream? commandPipe;
 
-        public MediaState CurrentState { get; private set; } = new();
-        public bool IsConnected { get; private set; }
-        public event Action? OnStateUpdated;
-
-        // Binary data that is sent alongside CurrentState
-        private Dictionary<string, byte[]> currentBlobs = [];
-
-        public bool TryGetBlob(string key, out byte[] blob)
-        {
-            if (currentBlobs.TryGetValue(key, out var result))
-            {
-                blob = result;
-                return true;
-            }
-            blob = [];
-            return false;
-        }
-
-        public PipeClient()
-        {
-            _ = Task.Run(() => StateReceiveLoopAsync(cts.Token));
-        }
+        public SMTCMediaSource() =>
+            ReceiveLoopTask = Task.Run(() => StateReceiveLoopAsync(cts.Token));
 
         private async Task StateReceiveLoopAsync(CancellationToken cancellationToken)
         {
@@ -56,15 +37,15 @@ namespace ProxyPlayer.Media
                     using var pipeClient = new NamedPipeClientStream(".", StatePipeName, PipeDirection.In, PipeOptions.Asynchronous);
                     await pipeClient.ConnectAsync(cancellationToken); // Wait for the server to connect
                     IsConnected = true;
-                    Plugin.Log.Debug("State pipe connected");
+                    Plugin.Log.Debug("Connected to SMTC state pipe");
 
                     while (pipeClient.IsConnected && !cancellationToken.IsCancellationRequested)
                     {
                         var envelope = await ReadEnvelopeAsync<MediaState>(pipeClient, cancellationToken);
                         if (envelope == null) break;
                         CurrentState = envelope.Payload;
-                        currentBlobs = envelope.Blobs;
-                        OnStateUpdated?.Invoke();
+                        CurrentBlobs = envelope.Blobs;
+                        NotifyStateUpdated();
                     }
                 }
                 catch (OperationCanceledException) { }
@@ -77,23 +58,29 @@ namespace ProxyPlayer.Media
                 finally
                 {
                     IsConnected = false;
-                    commandLock.Wait();
+
+                    // Guard against semaphore being disposed by Dispose() concurrently
                     try
                     {
-                        commandPipe?.Dispose();
-                        commandPipe = null;
+                        commandLock.Wait(cts.Token);
+                        try
+                        {
+                            commandPipe?.Dispose();
+                            commandPipe = null;
+                        }
+                        finally
+                        {
+                            commandLock.Release();
+                        }
                     }
-                    finally
-                    {
-                        commandLock.Release();
-                    }
+                    catch (ObjectDisposedException) { }
                 }
 
                 if (!cancellationToken.IsCancellationRequested)
                     await Task.Delay(ProxyReconnectTimeout, cancellationToken); // Wait before trying to reconnect
             }
         }
-        public async Task SendCommandAsync(MediaCommand command, string? targetAppId = null)
+        public override async Task SendCommandAsync(MediaCommand command, string? targetAppId = null)
         {
             await commandLock.WaitAsync();
             try
@@ -179,12 +166,15 @@ namespace ProxyPlayer.Media
             }
             return true;
         }
-        public void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            cts.Cancel();
-            commandPipe?.Dispose();
-            cts.Dispose();
-            commandLock.Dispose();
+            base.Dispose(disposing);
+
+            if (disposing)
+            {
+                commandPipe?.Dispose();
+                commandLock.Dispose();
+            }
         }
     }
 }

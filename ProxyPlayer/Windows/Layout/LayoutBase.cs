@@ -15,7 +15,7 @@ namespace ProxyPlayer.Windows.Layout
         public virtual Vector2 CoverArtDimensions { get; }
         public Action? OnRequestSessionListOpen { get; set; }
 
-        public abstract void Draw(MediaState mediaState, PipeClient pipeClient, TextureCache texture);
+        public abstract void Draw(MediaState mediaState, IMediaSource mediaSource, TextureCache texture);
 
         /// <summary>
         /// Draws the progress bar for the given media state.
@@ -42,8 +42,8 @@ namespace ProxyPlayer.Windows.Layout
         /// Draws the playback controls for the given media state, centered.
         /// </summary>
         /// <param name="mediaState">The media state to draw controls for.</param>
-        /// <param name="pipeClient">The pipe client to use for sending commands.</param>
-        public static void DrawPlaybackControlsCentered(MediaState mediaState, PipeClient pipeClient)
+        /// <param name="mediaSource">The pipe client to use for sending commands.</param>
+        public static void DrawPlaybackControlsCentered(MediaState mediaState, IMediaSource mediaSource)
         {
             var availWidth = ImGui.GetContentRegionAvail().X;
 
@@ -82,7 +82,7 @@ namespace ProxyPlayer.Windows.Layout
                     var shuffleColor = mediaState.IsShuffleActive ? (Vector4?)new Vector4(0.2f, 0.8f, 0.2f, 1.0f) : null;
                     var shuffleTooltip = mediaState.IsShuffleActive ? "Shuffle: On" : "Shuffle: Off";
                     if (ImPlayer.DrawClickableIcon("shuffle", FontAwesomeIcon.Random, shuffleTooltip, shuffleColor))
-                        _ = pipeClient.SendCommandAsync(MediaCommand.ToggleShuffle);
+                        _ = mediaSource.ToggleShuffleAsync();
                     first = false;
                 }
 
@@ -93,36 +93,36 @@ namespace ProxyPlayer.Windows.Layout
                     var repeatTooltip = mediaState.RepeatMode switch
                     {
                         "Track" => "Repeat: Track",
-                        "List" => "Repeat: List",
+                        "List" => "Repeat: All",
                         _ => "Repeat: Off"
                     };
                     if (!first) ImGui.SameLine();
                     if (ImPlayer.DrawClickableIcon("repeat", FontAwesomeIcon.Repeat, repeatTooltip, repeatColor))
-                        _ = pipeClient.SendCommandAsync(MediaCommand.ToggleRepeat);
+                        _ = mediaSource.ToggleRepeatAsync();
                     first = false;
                 }
 
                 if (!first) ImGui.SameLine();
                 if (ImPlayer.DrawClickableIcon("previous", FontAwesomeIcon.StepBackward, "Previous"))
-                    _ = pipeClient.SendCommandAsync(MediaCommand.Previous);
+                    _ = mediaSource.PreviousAsync();
                 first = false;
 
                 if (!first) ImGui.SameLine();
                 if (ImPlayer.DrawClickableIcon("play_pause", mediaState.PlaybackStatus == "Playing" ? FontAwesomeIcon.Pause : FontAwesomeIcon.Play, "Play/Pause"))
-                    _ = pipeClient.SendCommandAsync(MediaCommand.PlayPause);
+                    _ = mediaSource.PlayPauseAsync();
                 first = false;
 
                 if (mediaState.SupportsStop)
                 {
                     if (!first) ImGui.SameLine();
                     if (ImPlayer.DrawClickableIcon("stop", FontAwesomeIcon.Stop, "Stop"))
-                        _ = pipeClient.SendCommandAsync(MediaCommand.Stop);
+                        _ = mediaSource.StopAsync();
                     first = false;
                 }
 
                 if (!first) ImGui.SameLine();
                 if (ImPlayer.DrawClickableIcon("next", FontAwesomeIcon.StepForward, "Next"))
-                    _ = pipeClient.SendCommandAsync(MediaCommand.Next);
+                    _ = mediaSource.NextAsync();
             }
         }
         public void DrawSessionSelectButton(string id)

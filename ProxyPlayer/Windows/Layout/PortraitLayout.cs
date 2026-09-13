@@ -3,6 +3,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
 using ProxyPlayer.Media;
+using ProxyPlayer.Models;
 using ProxyPlayer.Shared;
 using ProxyPlayer.Utility;
 
@@ -15,7 +16,7 @@ namespace ProxyPlayer.Windows.Layout
     {
         public override Vector2 CoverArtDimensions => new(180, 180);
 
-        public override void Draw(MediaState mediaState, PipeClient pipeClient, TextureCache texture)
+        public override void Draw(MediaState mediaState, IMediaSource mediaClient, TextureCache texture)
         {
             var availWidth = ImGui.GetContentRegionAvail().X;
 
@@ -70,7 +71,7 @@ namespace ProxyPlayer.Windows.Layout
                 DrawProgressBar(mediaState);
 
                 // Playback Controls
-                DrawPlaybackControlsCentered(mediaState, pipeClient);
+                DrawPlaybackControlsCentered(mediaState, mediaClient);
             }
         }
     }

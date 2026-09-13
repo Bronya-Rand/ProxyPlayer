@@ -12,18 +12,17 @@ namespace ProxyPlayer.Windows;
 
 public class MainWindow : Window, IDisposable
 {
-    private const string NoProxyPlayerServerText = "Not connected to ProxyPlayer server.";
     private const string NoSessionSelectedText = "No media session selected.";
 
     private readonly Plugin plugin;
-    private readonly PipeClient pipeClient;
+    private readonly IMediaSource mediaSource;
     private readonly TextureCache textures;
     private readonly SessionListModal sessionListModal;
 
     private readonly CompactLayout compactLayout;
     private readonly PortraitLayout portraitLayout;
 
-    public MainWindow(Plugin plugin, PipeClient pipeClient)
+    public MainWindow(Plugin plugin, IMediaSource mediaSource)
         : base("ProxyPlayer - Now Playing##ProxyPlayerNowPlaying", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
         Flags = ImGuiWindowFlags.AlwaysAutoResize;
@@ -34,14 +33,14 @@ public class MainWindow : Window, IDisposable
         };
         SizeCondition = ImGuiCond.FirstUseEver;
 
-        this.pipeClient = pipeClient;
+        this.mediaSource = mediaSource;
         textures = new TextureCache();
         this.plugin = plugin;
 
-        sessionListModal = new SessionListModal(pipeClient)
+        sessionListModal = new SessionListModal(mediaSource)
         {
-            OnSelectSessionId = sessionId =>
-                _ = pipeClient.SendCommandAsync(MediaCommand.SelectSession, sessionId)
+            OnSelectSessionId = sessionId => _ =
+                mediaSource.SelectSessionAsync(sessionId)
         };
 
         compactLayout = new CompactLayout
@@ -61,16 +60,20 @@ public class MainWindow : Window, IDisposable
         var availWidth = ImGui.GetContentRegionAvail().X;
         sessionListModal.Draw();
 
-        // Get the current state from the pipe client and update the thumbnail texture if it has changed
-        var state = pipeClient.CurrentState;
-        pipeClient.TryGetBlob(BlobKeys.Thumbnail, out var thumbnailBytes);
+
+        // Get the current state from the media source and update the thumbnail texture if it has changed
+        var state = mediaSource.CurrentState;
+        mediaSource.TryGetThumbnail(out var thumbnailBytes);
         textures.UpdateIfChanged(BlobKeys.Thumbnail, state.HasThumbnail && thumbnailBytes.Length > 0 ? thumbnailBytes : null);
 
-        if (!pipeClient.IsConnected)
+        var disconnectedText = mediaSource.SourceName == "Windows SMTC"
+            ? "Not connected to ProxyPlayer server."
+            : $"Not connected to {mediaSource.SourceName} session.";
+        if (!mediaSource.IsConnected)
         {
-            var textWidth = ImGui.CalcTextSize(NoProxyPlayerServerText).X;
+            var textWidth = ImGui.CalcTextSize(disconnectedText).X;
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((availWidth - textWidth) / 2));
-            ImGui.TextColored(ImGuiColors.DalamudRed, NoProxyPlayerServerText);
+            ImGui.TextColored(ImGuiColors.DalamudRed, disconnectedText);
             return;
         }
 
@@ -92,10 +95,10 @@ public class MainWindow : Window, IDisposable
             switch (plugin.Configuration.PlayerDisplayLayout)
             {
                 case DisplayLayout.Compact:
-                    compactLayout.Draw(state, pipeClient, textures);
+                    compactLayout.Draw(state, mediaSource, textures);
                     break;
                 case DisplayLayout.Portrait:
-                    portraitLayout.Draw(state, pipeClient, textures);
+                    portraitLayout.Draw(state, mediaSource, textures);
                     break;
                 default:
                     ImGui.Text("Unknown display layout.");

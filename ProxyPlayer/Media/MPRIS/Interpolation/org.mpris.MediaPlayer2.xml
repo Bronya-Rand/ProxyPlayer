@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<node xmlns:tp="https://specifications.freedesktop.org/mpris/latest/Media_Player.html">
+    <interface name="org.mpris.MediaPlayer2">
+        <property name="Identity" type="s" access="read">
+            <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+        </property>
+    </interface>
+</node>

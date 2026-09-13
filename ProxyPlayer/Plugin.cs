@@ -1,11 +1,16 @@
 using System;
 using Dalamud.Game.Command;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility;
+using ProxyPlayer.Helpers;
 using ProxyPlayer.Media;
-using ProxyPlayer.Shared;
+using ProxyPlayer.Media.MPRIS;
+using ProxyPlayer.Media.SMTC;
+using ProxyPlayer.Models;
 using ProxyPlayer.Utility;
 using ProxyPlayer.Windows;
 
@@ -28,23 +33,41 @@ public sealed class Plugin : IDalamudPlugin
     private const string CommandName = "/pplayer";
 
     public Configuration Configuration { get; init; }
-    public PipeClient PipeClient { get; init; }
-    public ProxyProcessManager ProxyProcessManager { get; init; }
-    public DTRDisplay DtrDisplay { get; init; }
+    public IMediaSource MediaSource { get; init; } = null!;
+    public ProxyProcessManager? ProxyProcessManager { get; init; }
+    public DTRDisplay DtrDisplay { get; init; } = null!;
 
     public readonly WindowSystem WindowSystem = new(Constants.PluginName);
-    private ConfigWindow ConfigWindow { get; init; }
-    private MainWindow MainWindow { get; init; }
+    private ConfigWindow ConfigWindow { get; init; } = null!;
+    private MainWindow MainWindow { get; init; } = null!;
 
     public Plugin()
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-        PipeClient = new PipeClient();
-        ProxyProcessManager = new ProxyProcessManager();
-        DtrDisplay = new DTRDisplay(this, PipeClient);
+
+        if (Util.IsWine())
+            if (!AfUnixHelper.IsAfUnixSupported())
+            {
+                var notification = NotificationManager.AddNotification(new Notification
+                {
+                    Title = "Unsupported Wine/Proton Build",
+                    Content = Constants.UnsupportedWineBuild,
+                    Type = NotificationType.Error
+                });
+                return;
+            }
+            else
+                MediaSource = new MprisMediaSource();
+        else
+        {
+            ProxyProcessManager = new ProxyProcessManager();
+            MediaSource = new SMTCMediaSource();
+        }
+
+        DtrDisplay = new DTRDisplay(this, MediaSource);
 
         ConfigWindow = new ConfigWindow(this);
-        MainWindow = new MainWindow(this, PipeClient);
+        MainWindow = new MainWindow(this, MediaSource);
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
@@ -85,8 +108,8 @@ public sealed class Plugin : IDalamudPlugin
         MainWindow.Dispose();
         DtrDisplay.Dispose();
 
-        ProxyProcessManager.Dispose();
-        PipeClient.Dispose();
+        MediaSource.Dispose();
+        ProxyProcessManager?.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
     }
@@ -99,12 +122,15 @@ public sealed class Plugin : IDalamudPlugin
         var subCommand = parts[0].ToLowerInvariant();
         var subArgs = parts.Length > 1 ? parts[1] : string.Empty;
 
-        if (!PipeClient.IsConnected)
+        if (!MediaSource.IsConnected)
         {
-            ChatGui.PrintError($"[{Constants.PluginName}] Not connected to the ProxyPlayer server.");
+            var disconnectedText = MediaSource.SourceName == "Windows SMTC"
+                ? "Not connected to the ProxyPlayer server."
+                : $"Not connected to a {MediaSource.SourceName} session.";
+            ChatGui.PrintError($"[{Constants.PluginName}] {disconnectedText}");
             return;
         }
-        var state = PipeClient.CurrentState;
+        var state = MediaSource.CurrentState;
         if (state.SelectedAppId == null)
         {
             ChatGui.PrintError($"[{Constants.PluginName}] No active music source selected.");
@@ -115,13 +141,13 @@ public sealed class Plugin : IDalamudPlugin
         {
             // Play/Pause
             case "toggle":
-                _ = PipeClient.SendCommandAsync(MediaCommand.PlayPause);
+                _ = MediaSource.PlayPauseAsync();
                 break;
             case "next":
-                _ = PipeClient.SendCommandAsync(MediaCommand.Next);
+                _ = MediaSource.NextAsync();
                 break;
             case "prev":
-                _ = PipeClient.SendCommandAsync(MediaCommand.Previous);
+                _ = MediaSource.PreviousAsync();
                 break;
             case "stop":
                 if (!state.SupportsStop)
@@ -129,7 +155,7 @@ public sealed class Plugin : IDalamudPlugin
                     PrintChatError("The current music source does not support stopping playback.");
                     return;
                 }
-                _ = PipeClient.SendCommandAsync(MediaCommand.Stop);
+                _ = MediaSource.StopAsync();
                 break;
             case "shuffle":
                 if (!state.SupportsShuffling)
@@ -137,7 +163,7 @@ public sealed class Plugin : IDalamudPlugin
                     PrintChatError("The current music source does not support shuffling.");
                     return;
                 }
-                _ = PipeClient.SendCommandAsync(MediaCommand.ToggleShuffle);
+                _ = MediaSource.ToggleShuffleAsync();
                 break;
             case "repeat":
                 if (!state.SupportsRepeat)
@@ -145,7 +171,7 @@ public sealed class Plugin : IDalamudPlugin
                     PrintChatError("The current music source does not support repeating.");
                     return;
                 }
-                _ = PipeClient.SendCommandAsync(MediaCommand.ToggleRepeat);
+                _ = MediaSource.ToggleRepeatAsync();
                 break;
             case "songinfo":
                 var appName = TrackMetadata.GetFriendlyAppName(state);
@@ -157,7 +183,7 @@ public sealed class Plugin : IDalamudPlugin
                     PrintChatError("No other music source available to switch to.");
                     return;
                 }
-                
+
                 // Find the next session
                 var currentIndex = state.AvailableAppIds.IndexOf(state.SelectedAppId);
                 var nextIndex = (currentIndex + 1) % state.AvailableAppIds.Length;
@@ -166,12 +192,12 @@ public sealed class Plugin : IDalamudPlugin
                 // If the current session is still playing, pause it before switching
                 if (state.PlaybackStatus != "Stopped" && state.PlaybackStatus != "Paused")
                 {
-                    _ = PipeClient.SendCommandAsync(MediaCommand.PlayPause);
+                    _ = MediaSource.PlayPauseAsync();
                 }
 
                 // Switch and play the next session
-                _ = PipeClient.SendCommandAsync(MediaCommand.SelectSession, nextAppId);
-                _ = PipeClient.SendCommandAsync(MediaCommand.PlayPause);
+                _ = MediaSource.SelectSessionAsync(nextAppId);
+                _ = MediaSource.PlayPauseAsync();
 
                 var friendlyNextAppName = TrackMetadata.GetFriendlyAppName(state);
                 ChatGui.Print($"[{Constants.PluginName}] Switched to next music source: {friendlyNextAppName}");
@@ -191,7 +217,7 @@ public sealed class Plugin : IDalamudPlugin
         }
         OnProxyCommand(command, trimmedArgs);
     }
-    
+
     public void ToggleConfigUi() => ConfigWindow.Toggle();
     public void ToggleMainUi() => MainWindow.Toggle();
 }

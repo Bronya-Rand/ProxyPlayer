@@ -27,6 +27,10 @@ ProxyPlayer comes with either a compact or portrait UI for displaying your media
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <AdditionalFiles Include="Media\MPRIS\Interpolation\org.mpris.MediaPlayer2.Player.xml" Namespace="Mpris.MediaPlayer2.Player" DBusGeneratorMode="Proxy" />
+    <AdditionalFiles Include="Media\MPRIS\Interpolation\org.mpris.MediaPlayer2.xml" Namespace="Mpris.MediaPlayer2" DBusGeneratorMode="Proxy" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Update="DotNet.ReproducibleBuilds" Version="2.0.5" />
   </ItemGroup>
 
@@ -34,5 +38,10 @@ ProxyPlayer comes with either a compact or portrait UI for displaying your media
     <None Include="Resources\binaries\ProxyPlayerServer.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Tmds.DBus.Generator" Version="0.95.1" />
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.95.1" />
   </ItemGroup>
 </Project>

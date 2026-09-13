@@ -13,6 +13,18 @@
         "requested": "[2.0.5, )",
         "resolved": "2.0.5",
         "contentHash": "8LrlvI1KpjjJ4VGSqZ16yoOCKlQnYS+Y8rYNifNrscmVh5anJcF9E4e0NiDP30BHBMUbkoJ5KdcxoRWM7Pz9Aw=="
+      },
+      "Tmds.DBus.Generator": {
+        "type": "Direct",
+        "requested": "[0.95.1, )",
+        "resolved": "0.95.1",
+        "contentHash": "f1EaF9XwJAEv2lkJaNoOeTPOguw7UdR0SgMQZtVLHmjSC8AKj738KLePn495ynjYaUUtZKciP5Eb1iC+mFFODg=="
+      },
+      "Tmds.DBus.Protocol": {
+        "type": "Direct",
+        "requested": "[0.95.1, )",
+        "resolved": "0.95.1",
+        "contentHash": "IbGhqZAqqgB/DkT70+lAk4MNv95tZtsTMFQ+S3uGy0aTfOkGVeFjeNJsX8dBI/3+CPnO5XW6lRQKGeFEgHElKw=="
       }
     }
   }

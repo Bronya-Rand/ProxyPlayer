@@ -2,17 +2,17 @@ using System;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
-using ProxyPlayer.Media;
+using ProxyPlayer.Models;
 
 namespace ProxyPlayer.Windows
 {
     /// <summary>
     /// Displays the list of available media sessions from the ProxyPlayer server.
     /// </summary>
-    /// <param name="pipeClient">The pipe client to use for communication with the ProxyPlayer server.</param>
-    public sealed class SessionListModal(PipeClient pipeClient)
+    /// <param name="mediaSource">The pipe client to use for communication with the ProxyPlayer server.</param>
+    public sealed class SessionListModal(IMediaSource mediaSource)
     {
-        private readonly PipeClient pipeClient = pipeClient;
+        private readonly IMediaSource mediaSource = mediaSource;
 
         private bool shouldOpenModal;
         private bool isOpen;
@@ -39,7 +39,7 @@ namespace ProxyPlayer.Windows
         }
         public void DrawContent()
         {
-            var state = pipeClient.CurrentState;
+            var state = mediaSource.CurrentState;
             var apps = state.AvailableAppIds;
             if (apps.Length == 0)
             {
