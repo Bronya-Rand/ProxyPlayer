@@ -6,8 +6,8 @@
     <Company>Bronya Rand</Company>
     <Name>ProxyPlayer</Name>
     <Punchline>Control what's playing on your computer within XIV!</Punchline>
-    <Description>
-ProxyPlayer is a simple plugin that allows you to control your computer's media playback from within XIV.
+    <Description>ProxyPlayer is a simple plugin that allows you to control your Windows or Linux* PC's media playback from within XIV.
+&gt; * - Linux support is only supported on official XIVLauncher Wine builds and certain Wine/Proton builds with "AF_UNIX" support.
 
 Control your media player from within the game, without having to alt-tab or use a second monitor.
 Features (depending on your media player):
