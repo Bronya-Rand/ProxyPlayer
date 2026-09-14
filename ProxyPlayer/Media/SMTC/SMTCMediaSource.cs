@@ -35,7 +35,7 @@ namespace ProxyPlayer.Media.SMTC
                 try
                 {
                     using var pipeClient = new NamedPipeClientStream(".", StatePipeName, PipeDirection.In, PipeOptions.Asynchronous);
-                    await pipeClient.ConnectAsync(cancellationToken); // Wait for the server to connect
+                    await pipeClient.ConnectAsync(cancellationToken).ConfigureAwait(false); // Wait for the server to connect
                     IsConnected = true;
                     Plugin.Log.Debug("Connected to SMTC state pipe");
 
@@ -62,7 +62,7 @@ namespace ProxyPlayer.Media.SMTC
                     // Guard against semaphore being disposed by Dispose() concurrently
                     try
                     {
-                        commandLock.Wait(cts.Token);
+                        commandLock.Wait(CancellationToken.None);
                         try
                         {
                             commandPipe?.Dispose();
@@ -82,7 +82,7 @@ namespace ProxyPlayer.Media.SMTC
         }
         public override async Task SendCommandAsync(MediaCommand command, string? targetAppId = null)
         {
-            await commandLock.WaitAsync();
+            await commandLock.WaitAsync(cts.Token).ConfigureAwait(false);
             try
             {
                 if (commandPipe == null || !commandPipe.IsConnected)

@@ -52,7 +52,7 @@ namespace ProxyPlayer.Media.MPRIS
                     var address = DBusAddress.Session
                         ?? throw new InvalidOperationException("DBus session address not found.");
 
-                    dBus = new DBusConnection(address);
+                    dBus = new DBusConnection(new MprisWineConnectionOptions(address));
                     await dBus.ConnectAsync().ConfigureAwait(false);
                     IsConnected = true;
                     Plugin.Log.Debug("Connected to DBus session bus");
@@ -133,8 +133,10 @@ namespace ProxyPlayer.Media.MPRIS
         private async ValueTask HandleNameOwnerChangedAsync(Notification<NameOwnerChanged?> notification)
         {
             if (!notification.HasValue || notification.Value is not NameOwnerChanged { } nameOwnerChanged) return;
+            // Guard: Don't attempt to process events after cancellation
+            if (cts.IsCancellationRequested) return;
 
-            await sessionLock.WaitAsync().ConfigureAwait(false);
+            await sessionLock.WaitAsync(cts.Token).ConfigureAwait(false);
             try
             {
                 var appeared = nameOwnerChanged.OldOwner.IsNullOrEmpty() && !nameOwnerChanged.NewOwner.IsNullOrEmpty();
@@ -166,7 +168,7 @@ namespace ProxyPlayer.Media.MPRIS
         }
         public override async Task SendCommandAsync(MediaCommand command, string? targetAppId = null)
         {
-            if (dBus == null) return;
+            if (dBus == null || cts.IsCancellationRequested) return;
 
             if (command == MediaCommand.SelectSession && !targetAppId.IsNullOrEmpty())
             {
@@ -295,7 +297,7 @@ namespace ProxyPlayer.Media.MPRIS
 
                     SupportsShuffling = true, // MPRIS doesn't provide a way to query this, assume true
                     SupportsRepeat = true,
-                    SupportsStop = true,
+                    SupportsStop = true, // Mandatory according to MPRIS spec
                     IsShuffleActive = shuffle,
                     RepeatMode = loopStatus switch { "Track" => "Track", "Playlist" => "List", _ => "None" },
                     HasThumbnail = blobs.ContainsKey(BlobKeys.Thumbnail)
@@ -319,6 +321,8 @@ namespace ProxyPlayer.Media.MPRIS
                 {
                     var proxy = new Player(dBus, selectedPlayer, PlayerPath);
                     var positionUs = await proxy.GetPositionAsync().ConfigureAwait(false);
+
+                    // Mutate the cached position and update the state
                     lastKnownPositionSeconds = positionUs / UsToSeconds;
                     lastKnownPositionUpdatedUtc = DateTimeOffset.UtcNow;
 
@@ -336,7 +340,7 @@ namespace ProxyPlayer.Media.MPRIS
             {
                 var root = new MediaPlayer2(dBus, busName, PlayerPath);
                 var identity = await root.GetIdentityAsync().ConfigureAwait(false);
-                if (identity.IsNullOrEmpty()) return identity;
+                if (!identity.IsNullOrEmpty()) return identity;
             }
             catch { }
 

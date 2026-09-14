@@ -60,17 +60,15 @@ public class MainWindow : Window, IDisposable
         var availWidth = ImGui.GetContentRegionAvail().X;
         sessionListModal.Draw();
 
-
         // Get the current state from the media source and update the thumbnail texture if it has changed
         var state = mediaSource.CurrentState;
         mediaSource.TryGetThumbnail(out var thumbnailBytes);
         textures.UpdateIfChanged(BlobKeys.Thumbnail, state.HasThumbnail && thumbnailBytes.Length > 0 ? thumbnailBytes : null);
 
-        var disconnectedText = mediaSource.SourceName == "Windows SMTC"
-            ? "Not connected to ProxyPlayer server."
-            : $"Not connected to {mediaSource.SourceName} session.";
-        if (!mediaSource.IsConnected)
+        // For SMTC, check if bridge is active
+        if (!mediaSource.IsConnected && mediaSource.SourceName == "Windows SMTC")
         {
+            var disconnectedText = "Not connected to ProxyPlayer server.";
             var textWidth = ImGui.CalcTextSize(disconnectedText).X;
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((availWidth - textWidth) / 2));
             ImGui.TextColored(ImGuiColors.DalamudRed, disconnectedText);
