@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Dalamud.Game.Command;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Windowing;
@@ -16,7 +18,7 @@ using ProxyPlayer.Windows;
 
 namespace ProxyPlayer;
 
-public sealed class Plugin : IDalamudPlugin
+public sealed class Plugin : IAsyncDalamudPlugin
 {
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
@@ -32,29 +34,31 @@ public sealed class Plugin : IDalamudPlugin
 
     private const string CommandName = "/pplayer";
 
-    public Configuration Configuration { get; init; }
-    public IMediaSource MediaSource { get; init; } = null!;
-    public ProxyProcessManager? ProxyProcessManager { get; init; }
-    public DTRDisplay DtrDisplay { get; init; } = null!;
+    public Configuration Configuration { get; private set; } = null!;
+    public IMediaSource MediaSource { get; private set; } = null!;
+    public ProxyProcessManager? ProxyProcessManager { get; private set; }
+    public DTRDisplay DtrDisplay { get; private set; } = null!;
 
     public readonly WindowSystem WindowSystem = new(Constants.PluginName);
-    private ConfigWindow ConfigWindow { get; init; } = null!;
-    private MainWindow MainWindow { get; init; } = null!;
+    private ConfigWindow ConfigWindow { get; set; } = null!;
+    private MainWindow MainWindow { get; set; } = null!;
 
-    public Plugin()
+    public Task LoadAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         if (Util.IsWine())
             if (!AfUnixHelper.IsAfUnixSupported())
             {
-                var notification = NotificationManager.AddNotification(new Notification
+                var _ = NotificationManager.AddNotification(new Notification
                 {
                     Title = "Unsupported Wine/Proton Build",
                     Content = Constants.UnsupportedWineBuild,
                     Type = NotificationType.Error
                 });
-                return;
+                return Task.CompletedTask;
             }
             else
                 MediaSource = new MprisMediaSource();
@@ -93,9 +97,11 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
 
         Framework.Update += DtrDisplay.UpdateDtr;
+
+        return Task.CompletedTask;
     }
 
-    public void Dispose()
+    public ValueTask DisposeAsync()
     {
         PluginInterface.UiBuilder.Draw -= WindowSystem.Draw;
         PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfigUi;
@@ -112,6 +118,8 @@ public sealed class Plugin : IDalamudPlugin
         ProxyProcessManager?.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
+
+        return ValueTask.CompletedTask;
     }
 
     private static void PrintChatError(string message) => ChatGui.PrintError($"[{Constants.PluginName}] {message}");
