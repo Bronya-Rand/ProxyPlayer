@@ -40,12 +40,9 @@ namespace ProxyPlayer.Media
             // Fire and forget the texture load, we don't need to await it here.
             _ = LoadTextureAsync(key, entry, bytes, entry.Generation);
         }
-        public IDalamudTextureWrap? GetTexture(string key)
-        {
-            if (entries.TryGetValue(key, out var entry))
-                return entry.Texture;
-            return null;
-        }
+
+        public IDalamudTextureWrap? GetTexture(string key) => entries.TryGetValue(key, out var entry) ? entry.Texture : null;
+
         private static async Task LoadTextureAsync(string key, Entry entry, byte[] bytes, int generation)
         {
             try
@@ -68,6 +65,7 @@ namespace ProxyPlayer.Media
                 Plugin.Log.Error(ex, "Failed to load texture for blob key {key}", key);
             }
         }
+
         public void Evict(string key)
         {
             if (entries.Remove(key, out var entry))
@@ -76,6 +74,7 @@ namespace ProxyPlayer.Media
                 entry.Texture?.Dispose();
             }
         }
+
         public void Dispose()
         {
             foreach (var entry in entries.Values)

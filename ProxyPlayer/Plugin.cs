@@ -20,24 +20,45 @@ namespace ProxyPlayer;
 
 public sealed class Plugin : IAsyncDalamudPlugin
 {
-    [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
-    [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
-    [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
-    [PluginService] internal static IClientState ClientState { get; private set; } = null!;
-    [PluginService] internal static IPlayerState PlayerState { get; private set; } = null!;
-    [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
-    [PluginService] internal static IFramework Framework { get; private set; } = null!;
-    [PluginService] internal static INotificationManager NotificationManager { get; private set; } = null!;
-    [PluginService] internal static IPluginLog Log { get; private set; } = null!;
-    [PluginService] internal static IDtrBar DtrBar { get; private set; } = null!;
-    [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
+    [PluginService]
+    internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
+
+    [PluginService]
+    internal static ITextureProvider TextureProvider { get; private set; } = null!;
+
+    [PluginService]
+    internal static ICommandManager CommandManager { get; private set; } = null!;
+
+    [PluginService]
+    internal static IClientState ClientState { get; private set; } = null!;
+
+    [PluginService]
+    internal static IPlayerState PlayerState { get; private set; } = null!;
+
+    [PluginService]
+    internal static IDataManager DataManager { get; private set; } = null!;
+
+    [PluginService]
+    internal static IFramework Framework { get; private set; } = null!;
+
+    [PluginService]
+    internal static INotificationManager NotificationManager { get; private set; } = null!;
+
+    [PluginService]
+    internal static IPluginLog Log { get; private set; } = null!;
+
+    [PluginService]
+    internal static IDtrBar DtrBar { get; private set; } = null!;
+
+    [PluginService]
+    internal static IChatGui ChatGui { get; private set; } = null!;
 
     private const string CommandName = "/pplayer";
 
     public Configuration Configuration { get; private set; } = null!;
     public IMediaSource MediaSource { get; private set; } = null!;
     public ProxyProcessManager? ProxyProcessManager { get; private set; }
-    public DTRDisplay DtrDisplay { get; private set; } = null!;
+    public DtrDisplay DtrDisplay { get; private set; } = null!;
 
     public readonly WindowSystem WindowSystem = new(Constants.PluginName);
     private ConfigWindow ConfigWindow { get; set; } = null!;
@@ -46,7 +67,7 @@ public sealed class Plugin : IAsyncDalamudPlugin
     public Task LoadAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         if (Util.IsWine())
@@ -65,10 +86,10 @@ public sealed class Plugin : IAsyncDalamudPlugin
         else
         {
             ProxyProcessManager = new ProxyProcessManager();
-            MediaSource = new SMTCMediaSource();
+            MediaSource = new SmtcMediaSource();
         }
 
-        DtrDisplay = new DTRDisplay(this, MediaSource);
+        DtrDisplay = new DtrDisplay(this, MediaSource);
 
         ConfigWindow = new ConfigWindow(this);
         MainWindow = new MainWindow(this, MediaSource);
@@ -79,16 +100,16 @@ public sealed class Plugin : IAsyncDalamudPlugin
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
             HelpMessage = $"""
-            Opens the ProxyPlayer main window.
-            {CommandName} toggle - Toggles play/pause for the current music source.
-            {CommandName} next - Skips to the next track in the current music source.
-            {CommandName} prev - Returns to the previous track in the current music source.
-            {CommandName} stop - Stops playback for the current music source (if supported).
-            {CommandName} shuffle - Toggles shuffle mode for the current music source (if supported).
-            {CommandName} repeat - Toggles repeat mode for the current music source (if supported).
-            {CommandName} songinfo - Displays the current track information for the active music source.
-            {CommandName} next-source - Switches to the next available music source (if multiple sessions are available).
-            """
+                           Opens the ProxyPlayer main window.
+                           {CommandName} toggle - Toggles play/pause for the current music source.
+                           {CommandName} next - Skips to the next track in the current music source.
+                           {CommandName} prev - Returns to the previous track in the current music source.
+                           {CommandName} stop - Stops playback for the current music source (if supported).
+                           {CommandName} shuffle - Toggles shuffle mode for the current music source (if supported).
+                           {CommandName} repeat - Toggles repeat mode for the current music source (if supported).
+                           {CommandName} songinfo - Displays the current track information for the active music source.
+                           {CommandName} next-source - Switches to the next available music source (if multiple sessions are available).
+                           """
         });
 
         PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
@@ -123,21 +144,23 @@ public sealed class Plugin : IAsyncDalamudPlugin
     }
 
     private static void PrintChatError(string message) => ChatGui.PrintError($"[{Constants.PluginName}] {message}");
+
     private void OnProxyCommand(string command, string args)
     {
         var parts = args.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries
-            | StringSplitOptions.TrimEntries);
+                                       | StringSplitOptions.TrimEntries);
         var subCommand = parts[0].ToLowerInvariant();
         var subArgs = parts.Length > 1 ? parts[1] : string.Empty;
 
         if (!MediaSource.IsConnected)
         {
             var disconnectedText = MediaSource.SourceName == "Windows SMTC"
-                ? "Not connected to the ProxyPlayer server."
-                : $"Not connected to a {MediaSource.SourceName} session.";
+                                       ? "Not connected to the ProxyPlayer server."
+                                       : $"Not connected to a {MediaSource.SourceName} session.";
             ChatGui.PrintError($"[{Constants.PluginName}] {disconnectedText}");
             return;
         }
+
         var state = MediaSource.CurrentState;
         if (state.SelectedAppId == null)
         {
@@ -163,6 +186,7 @@ public sealed class Plugin : IAsyncDalamudPlugin
                     PrintChatError("The current music source does not support stopping playback.");
                     return;
                 }
+
                 _ = MediaSource.StopAsync();
                 break;
             case "shuffle":
@@ -171,6 +195,7 @@ public sealed class Plugin : IAsyncDalamudPlugin
                     PrintChatError("The current music source does not support shuffling.");
                     return;
                 }
+
                 _ = MediaSource.ToggleShuffleAsync();
                 break;
             case "repeat":
@@ -179,6 +204,7 @@ public sealed class Plugin : IAsyncDalamudPlugin
                     PrintChatError("The current music source does not support repeating.");
                     return;
                 }
+
                 _ = MediaSource.ToggleRepeatAsync();
                 break;
             case "songinfo":
@@ -215,6 +241,7 @@ public sealed class Plugin : IAsyncDalamudPlugin
                 break;
         }
     }
+
     private void OnCommand(string command, string args)
     {
         var trimmedArgs = args.Trim();
@@ -223,6 +250,7 @@ public sealed class Plugin : IAsyncDalamudPlugin
             ToggleMainUi();
             return;
         }
+
         OnProxyCommand(command, trimmedArgs);
     }
 

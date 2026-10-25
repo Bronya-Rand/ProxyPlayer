@@ -38,12 +38,13 @@ namespace ProxyPlayer.Windows.Layout
                 }
             }
         }
+
         /// <summary>
         /// Draws the playback controls for the given media state, centered.
         /// </summary>
         /// <param name="mediaState">The media state to draw controls for.</param>
         /// <param name="mediaSource">The pipe client to use for sending commands.</param>
-        public static void DrawPlaybackControlsCentered(MediaState mediaState, IMediaSource mediaSource)
+        protected static void DrawPlaybackControlsCentered(MediaState mediaState, IMediaSource mediaSource)
         {
             var availWidth = ImGui.GetContentRegionAvail().X;
 
@@ -54,7 +55,10 @@ namespace ProxyPlayer.Windows.Layout
             using (ImRaii.PushFont(UiBuilder.IconFont))
             {
                 prevWidth = ImGui.CalcTextSize(FontAwesomeIcon.StepBackward.ToIconString()).X;
-                playWidth = ImGui.CalcTextSize((mediaState.PlaybackStatus == "Playing" ? FontAwesomeIcon.Pause : FontAwesomeIcon.Play).ToIconString()).X;
+                playWidth = ImGui
+                            .CalcTextSize((mediaState.PlaybackStatus == "Playing"
+                                               ? FontAwesomeIcon.Pause
+                                               : FontAwesomeIcon.Play).ToIconString()).X;
                 nextWidth = ImGui.CalcTextSize(FontAwesomeIcon.StepForward.ToIconString()).X;
                 if (mediaState.SupportsStop)
                     stopWidth = ImGui.CalcTextSize(FontAwesomeIcon.Stop.ToIconString()).X;
@@ -66,9 +70,24 @@ namespace ProxyPlayer.Windows.Layout
 
             var totalWidth = prevWidth + playWidth + nextWidth;
             var buttonCount = 3;
-            if (mediaState.SupportsStop) { totalWidth += stopWidth; buttonCount++; }
-            if (mediaState.SupportsRepeat) { totalWidth += repeatWidth; buttonCount++; }
-            if (mediaState.SupportsShuffling) { totalWidth += shuffleWidth; buttonCount++; }
+            if (mediaState.SupportsStop)
+            {
+                totalWidth += stopWidth;
+                buttonCount++;
+            }
+
+            if (mediaState.SupportsRepeat)
+            {
+                totalWidth += repeatWidth;
+                buttonCount++;
+            }
+
+            if (mediaState.SupportsShuffling)
+            {
+                totalWidth += shuffleWidth;
+                buttonCount++;
+            }
+
             totalWidth += spacing * (buttonCount - 1);
 
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((availWidth - totalWidth) / 2));
@@ -79,7 +98,9 @@ namespace ProxyPlayer.Windows.Layout
 
                 if (mediaState.SupportsShuffling)
                 {
-                    var shuffleColor = mediaState.IsShuffleActive ? (Vector4?)new Vector4(0.2f, 0.8f, 0.2f, 1.0f) : null;
+                    var shuffleColor = mediaState.IsShuffleActive
+                                           ? (Vector4?)new Vector4(0.2f, 0.8f, 0.2f, 1.0f)
+                                           : null;
                     var shuffleTooltip = mediaState.IsShuffleActive ? "Shuffle: On" : "Shuffle: Off";
                     if (ImPlayer.DrawClickableIcon("shuffle", FontAwesomeIcon.Random, shuffleTooltip, shuffleColor))
                         _ = mediaSource.ToggleShuffleAsync();
@@ -108,7 +129,10 @@ namespace ProxyPlayer.Windows.Layout
                 first = false;
 
                 if (!first) ImGui.SameLine();
-                if (ImPlayer.DrawClickableIcon("play_pause", mediaState.PlaybackStatus == "Playing" ? FontAwesomeIcon.Pause : FontAwesomeIcon.Play, "Play/Pause"))
+                if (ImPlayer.DrawClickableIcon("play_pause",
+                                               mediaState.PlaybackStatus == "Playing"
+                                                   ? FontAwesomeIcon.Pause
+                                                   : FontAwesomeIcon.Play, "Play/Pause"))
                     _ = mediaSource.PlayPauseAsync();
                 first = false;
 
@@ -125,7 +149,8 @@ namespace ProxyPlayer.Windows.Layout
                     _ = mediaSource.NextAsync();
             }
         }
-        public void DrawSessionSelectButton(string id)
+
+        protected void DrawSessionSelectButton(string id)
         {
             if (ImPlayer.DrawClickableIcon($"select_session###{id}", FontAwesomeIcon.Sync, "Select Session"))
                 OnRequestSessionListOpen?.Invoke();

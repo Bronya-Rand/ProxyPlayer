@@ -9,13 +9,13 @@ namespace ProxyPlayer.Media
     /// <summary>
     /// Manages the Server Info Bar entry in XIV's DTR bar
     /// </summary>
-    public sealed class DTRDisplay : IDisposable
+    public sealed class DtrDisplay : IDisposable
     {
         private readonly IDtrBarEntry? dtrEntry;
         private readonly Plugin plugin;
         private readonly IMediaSource mediaSource;
 
-        public DTRDisplay(Plugin plugin, IMediaSource mediaSource)
+        public DtrDisplay(Plugin plugin, IMediaSource mediaSource)
         {
             this.plugin = plugin;
             this.mediaSource = mediaSource;
@@ -43,6 +43,7 @@ namespace ProxyPlayer.Media
             UpdateVisibility(true);
             UpdateBarString();
         }
+
         private void UpdateBarString()
         {
             if (dtrEntry == null) return;
@@ -51,8 +52,8 @@ namespace ProxyPlayer.Media
             // Obviously get only the first 9 characters of the song name to avoid overflow
             var seIcon = SeIconChar.AutoTranslateClose.ToIconString();
             var tooltip = mediaSource.SourceName == "Windows SMTC"
-                ? "ProxyPlayer server not running."
-                : $"ProxyPlayer not connected to a {mediaSource.SourceName} session.";
+                              ? "ProxyPlayer server not running."
+                              : $"ProxyPlayer not connected to a {mediaSource.SourceName} session.";
 
             var dtrText = "Not Connected";
             if (mediaSource.IsConnected)
@@ -65,24 +66,23 @@ namespace ProxyPlayer.Media
                 else
                 {
                     var songName = mediaSource.CurrentState.Title.Length > Constants.MaxTitleLengthDtr
-                        ? mediaSource.CurrentState.Title[..(Constants.MaxTitleLengthDtr - 3)] + "..."
-                        : mediaSource.CurrentState.Title;
+                                       ? mediaSource.CurrentState.Title[..(Constants.MaxTitleLengthDtr - 3)] + "..."
+                                       : mediaSource.CurrentState.Title;
                     dtrText = songName;
                     tooltip = mediaSource.CurrentState.Title;
                 }
             }
+
             dtrEntry.Text = $"{seIcon} {dtrText}";
             dtrEntry.Tooltip = tooltip;
         }
+
         private void UpdateVisibility(bool isVisible) => dtrEntry?.Shown = isVisible;
 
         // Open MainWindow when the DTR entry is clicked
-        private Action<DtrInteractionEvent>? OnClick()
+        private Action<DtrInteractionEvent> OnClick()
         {
-            return _ =>
-            {
-                plugin.ToggleMainUi();
-            };
+            return _ => { plugin.ToggleMainUi(); };
         }
     }
 }

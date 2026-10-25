@@ -38,10 +38,10 @@ namespace ProxyPlayer.Windows.Layout
 
             // Centered Large Cover Art
             var coverTexture = mediaState.HasThumbnail ? texture.GetTexture(BlobKeys.Thumbnail) : null;
-            if (coverTexture is { } tex)
+            if (coverTexture != null)
             {
                 ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((availWidth - CoverArtDimensions.X) / 2));
-                ImGui.Image(tex.Handle, CoverArtDimensions);
+                ImGui.Image(coverTexture.Handle, CoverArtDimensions);
             }
 
             ImGui.Spacing();

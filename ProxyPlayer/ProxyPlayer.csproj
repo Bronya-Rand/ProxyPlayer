@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
   <PropertyGroup>
-    <Version>1.1.1.0</Version>
+    <Version>1.1.2.0</Version>
     <Author>Bronya Rand</Author>
     <Company>Bronya Rand</Company>
     <Name>ProxyPlayer</Name>
@@ -20,7 +20,7 @@ Features (depending on your media player):
 
 ProxyPlayer comes with either a compact or portrait UI for displaying your media information.
     </Description>
-    <Tags>music,proxy,player,media,windows,smtc</Tags>
+    <Tags>music;proxy;player;media;windows;smtc;linux;mpris;wine</Tags>
     <CategoryTags>utility;ui;other</CategoryTags>
     <PackageProjectUrl>https://github.com/Bronya-Rand/ProxyPlayer</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>

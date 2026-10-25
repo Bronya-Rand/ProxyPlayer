@@ -5,29 +5,29 @@ namespace ProxyPlayer.Helpers
 {
     internal static class AfUnixHelper
     {
-        private static bool? AFUnixSupported;
+        private static bool? AfUnixSupported;
 
         public static bool IsAfUnixSupported()
         {
-            if (AFUnixSupported.HasValue) return AFUnixSupported.Value;
+            if (AfUnixSupported.HasValue) return AfUnixSupported.Value;
 
             try
             {
                 using var probe = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-                AFUnixSupported = true;
+                AfUnixSupported = true;
             }
             catch (SocketException)
             {
                 Plugin.Log.Warning("AF_UNIX is not supported on this platform.");
-                AFUnixSupported = false;
+                AfUnixSupported = false;
             }
             catch (Exception ex)
             {
                 Plugin.Log.Warning(ex, "AF_UNIX probe failed");
-                AFUnixSupported = false;
+                AfUnixSupported = false;
             }
 
-            return AFUnixSupported.Value;
+            return AfUnixSupported.Value;
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
@@ -12,8 +13,6 @@ namespace ProxyPlayer.Windows
     /// <param name="mediaSource">The pipe client to use for communication with the ProxyPlayer server.</param>
     public sealed class SessionListModal(IMediaSource mediaSource)
     {
-        private readonly IMediaSource mediaSource = mediaSource;
-
         private bool shouldOpenModal;
         private bool isOpen;
         public Action<string>? OnSelectSessionId { get; set; }
@@ -22,7 +21,7 @@ namespace ProxyPlayer.Windows
         {
             if (!isOpen) return;
 
-            var modalId = "Select Music Source###ProxyPlayerSessionList";
+            const string modalId = "Select Music Source###ProxyPlayerSessionList";
             if (shouldOpenModal)
             {
                 ImGui.OpenPopup(modalId);
@@ -37,6 +36,7 @@ namespace ProxyPlayer.Windows
             if (modal)
                 DrawContent();
         }
+
         public void DrawContent()
         {
             var state = mediaSource.CurrentState;
@@ -46,23 +46,23 @@ namespace ProxyPlayer.Windows
                 ImGui.Text("No active music sources found.");
                 return;
             }
-            else
+
+            ImGui.Text("Select a music source:");
+            var selectedFriendlyName = state.SelectedAppId != null &&
+                                       state.AppFriendlyNames.TryGetValue(state.SelectedAppId, out var sName)
+                                           ? sName
+                                           : state.SelectedAppId ?? "Select app...";
+            using (var mediaCombo = ImRaii.Combo("###ProxyPlayerSelectSession", selectedFriendlyName))
             {
-                ImGui.Text("Select a music source:");
-                var selectedFriendlyName = state.SelectedAppId != null && state.AppFriendlyNames.TryGetValue(state.SelectedAppId, out var sName)
-                    ? sName
-                    : state.SelectedAppId ?? "Select app...";
-                using (var mediaCombo = ImRaii.Combo("###ProxyPlayerSelectSession", selectedFriendlyName))
+                if (mediaCombo)
                 {
-                    if (mediaCombo)
+                    foreach (var appId in apps)
                     {
-                        foreach (var appId in apps)
+                        var appFriendlyName =
+                            state.AppFriendlyNames.GetValueOrDefault(appId, appId);
+                        if (ImGui.Selectable(appFriendlyName, appId == state.SelectedAppId))
                         {
-                            var appFriendlyName = state.AppFriendlyNames.TryGetValue(appId, out var fName) ? fName : appId;
-                            if (ImGui.Selectable(appFriendlyName, appId == state.SelectedAppId))
-                            {
-                                OnSelectSessionId?.Invoke(appId);
-                            }
+                            OnSelectSessionId?.Invoke(appId);
                         }
                     }
                 }
@@ -71,10 +71,9 @@ namespace ProxyPlayer.Windows
             ImGui.Separator();
 
             if (ImGui.Button("Close"))
-            {
                 isOpen = false;
-            }
         }
+
         public void Open()
         {
             isOpen = true;

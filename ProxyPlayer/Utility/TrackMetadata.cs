@@ -6,7 +6,7 @@ namespace ProxyPlayer.Utility
     public static class TrackMetadata
     {
         /// <summary>
-        /// Returns a interpolated position based on the last known position and 
+        /// Returns an interpolated position based on the last known position and 
         /// the elapsed time since the last update.
         /// </summary>
         /// <remarks>

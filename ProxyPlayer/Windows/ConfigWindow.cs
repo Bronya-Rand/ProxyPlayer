@@ -29,17 +29,15 @@ public class ConfigWindow : Window, IDisposable
         var displayLayout = configuration.PlayerDisplayLayout;
         var displayLayoutPlaceholder = displayLayout.ToFriendlyString();
         ImGui.Text("Player Layout:");
-        using (var displayCombo = ImRaii.Combo("###ProxyPlayerDisplayLayout", displayLayoutPlaceholder))
+        using var displayCombo = ImRaii.Combo("###ProxyPlayerDisplayLayout", displayLayoutPlaceholder);
+        if (displayCombo)
         {
-            if (displayCombo)
+            foreach (var layout in Enum.GetValues<DisplayLayout>())
             {
-                foreach (var layout in Enum.GetValues<DisplayLayout>())
+                if (ImGui.Selectable(layout.ToFriendlyString(), layout == displayLayout))
                 {
-                    if (ImGui.Selectable(layout.ToFriendlyString(), layout == displayLayout))
-                    {
-                        configuration.PlayerDisplayLayout = layout;
-                        configuration.Save();
-                    }
+                    configuration.PlayerDisplayLayout = layout;
+                    configuration.Save();
                 }
             }
         }

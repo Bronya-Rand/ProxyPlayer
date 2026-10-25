@@ -14,7 +14,11 @@ namespace ProxyPlayer.Media.SMTC
     public sealed class ProxyProcessManager : IDisposable
     {
         private const string ProxyServerMutexName = "Local\\ProxyPlayerServer.SingleInstance";
-        private static FileInfo ProxyServerPath => new(Path.Combine(Plugin.PluginInterface.AssemblyLocation.Directory!.FullName, "Resources/binaries", "ProxyPlayerServer.exe"));
+
+        private static FileInfo ProxyServerPath =>
+            new(Path.Combine(Plugin.PluginInterface.AssemblyLocation.Directory!.FullName, "Resources/binaries",
+                             "ProxyPlayerServer.exe"));
+
         private Process? process;
 
         public ProxyProcessManager()
@@ -28,14 +32,16 @@ namespace ProxyPlayer.Media.SMTC
                 });
                 return;
             }
+
             _ = StartProxyServer();
         }
-        private async Task StartProxyServer()
+
+        private Task StartProxyServer()
         {
             if (IsProxyServerReachableAsync())
             {
                 Plugin.Log.Info("ProxyPlayerServer is already running");
-                return;
+                return Task.CompletedTask;
             }
 
             try
@@ -55,7 +61,10 @@ namespace ProxyPlayer.Media.SMTC
             {
                 Plugin.Log.Error(ex, "Failed to start ProxyPlayerServer");
             }
+            
+            return Task.CompletedTask;
         }
+
         private static bool IsProxyServerReachableAsync()
         {
             if (Mutex.TryOpenExisting(ProxyServerMutexName, out var mutex))
@@ -63,11 +72,13 @@ namespace ProxyPlayer.Media.SMTC
                 mutex.Dispose();
                 return true;
             }
+
             return false;
         }
+
         public void Dispose()
         {
-            if (process != null && !process.HasExited)
+            if (process is { HasExited: false })
             {
                 try
                 {

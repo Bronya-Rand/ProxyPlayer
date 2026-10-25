@@ -23,7 +23,8 @@ public class MainWindow : Window, IDisposable
     private readonly PortraitLayout portraitLayout;
 
     public MainWindow(Plugin plugin, IMediaSource mediaSource)
-        : base("ProxyPlayer - Now Playing##ProxyPlayerNowPlaying", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
+        : base("ProxyPlayer - Now Playing##ProxyPlayerNowPlaying",
+               ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
         Flags = ImGuiWindowFlags.AlwaysAutoResize;
         SizeConstraints = new WindowSizeConstraints
@@ -40,7 +41,7 @@ public class MainWindow : Window, IDisposable
         sessionListModal = new SessionListModal(mediaSource)
         {
             OnSelectSessionId = sessionId => _ =
-                mediaSource.SelectSessionAsync(sessionId)
+                                                 mediaSource.SelectSessionAsync(sessionId)
         };
 
         compactLayout = new CompactLayout
@@ -63,12 +64,13 @@ public class MainWindow : Window, IDisposable
         // Get the current state from the media source and update the thumbnail texture if it has changed
         var state = mediaSource.CurrentState;
         mediaSource.TryGetThumbnail(out var thumbnailBytes);
-        textures.UpdateIfChanged(BlobKeys.Thumbnail, state.HasThumbnail && thumbnailBytes.Length > 0 ? thumbnailBytes : null);
+        textures.UpdateIfChanged(BlobKeys.Thumbnail,
+                                 state.HasThumbnail && thumbnailBytes.Length > 0 ? thumbnailBytes : null);
 
         // For SMTC, check if bridge is active
-        if (!mediaSource.IsConnected && mediaSource.SourceName == "Windows SMTC")
+        if (mediaSource is { IsConnected: false, SourceName: "Windows SMTC" })
         {
-            var disconnectedText = "Not connected to ProxyPlayer server.";
+            const string disconnectedText = "Not connected to ProxyPlayer server.";
             var textWidth = ImGui.CalcTextSize(disconnectedText).X;
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((availWidth - textWidth) / 2));
             ImGui.TextColored(ImGuiColors.DalamudRed, disconnectedText);
@@ -81,27 +83,25 @@ public class MainWindow : Window, IDisposable
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((availWidth - (textWidth - 1)) / 2));
             ImGui.Text(NoSessionSelectedText);
 
-            var sourceButtonText = "Select Music Source";
+            const string sourceButtonText = "Select Music Source";
             var sourceButtonTextWidth = ImGui.CalcTextSize(sourceButtonText).X + 20; // Add some padding for the button
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((availWidth - sourceButtonTextWidth) / 2));
             if (ImGui.Button($"{sourceButtonText}###MainWindowSelectSession"))
                 sessionListModal.Open();
             return;
         }
-        else
+
+        switch (plugin.Configuration.PlayerDisplayLayout)
         {
-            switch (plugin.Configuration.PlayerDisplayLayout)
-            {
-                case DisplayLayout.Compact:
-                    compactLayout.Draw(state, mediaSource, textures);
-                    break;
-                case DisplayLayout.Portrait:
-                    portraitLayout.Draw(state, mediaSource, textures);
-                    break;
-                default:
-                    ImGui.Text("Unknown display layout.");
-                    break;
-            }
+            case DisplayLayout.Compact:
+                compactLayout.Draw(state, mediaSource, textures);
+                break;
+            case DisplayLayout.Portrait:
+                portraitLayout.Draw(state, mediaSource, textures);
+                break;
+            default:
+                ImGui.Text("Unknown display layout.");
+                break;
         }
     }
 }

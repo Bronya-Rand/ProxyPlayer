@@ -6,7 +6,9 @@ namespace ProxyPlayerServer
             AppDomain.CurrentDomain.BaseDirectory,
             "ProxyPlayerServer.log"
         );
+
         private static readonly Lock LogLock = new();
+
         public static void Write(string message)
         {
             lock (LogLock)
@@ -15,9 +17,13 @@ namespace ProxyPlayerServer
                 {
                     File.AppendAllText(LogPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}{Environment.NewLine}");
                 }
-                catch { }
+                catch
+                {
+                    // ignored
+                }
             }
         }
+
         public static void Write(string message, Exception ex) => Write($"{message}{Environment.NewLine}{ex}");
         public static void Flush() => File.WriteAllText(LogPath, string.Empty);
     }

@@ -42,6 +42,7 @@ namespace ProxyPlayer.Media.MPRIS
                     // Fall back to the next path if reading fails
                 }
             }
+
             throw new FileNotFoundException("Unable to find a valid machine-id.");
         }
 
@@ -55,14 +56,13 @@ namespace ProxyPlayer.Media.MPRIS
         {
             // Get UID of XIV process to set the correct UID for the D-Bus connection
             using var reader = new StreamReader("/proc/self/status");
-            string? line;
             string? uid = null;
 
-            while ((line = await reader.ReadLineAsync(cancellationToken)) != null)
+            while (await reader.ReadLineAsync(cancellationToken) is { } line)
             {
                 if (line.StartsWith("Uid:"))
                 {
-                    var parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    var parts = line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length >= 3)
                     {
                         uid = parts[2]; // Get the effective UID
@@ -83,6 +83,7 @@ namespace ProxyPlayer.Media.MPRIS
                     MachineId = machineId
                 };
             }
+
             throw new Exception("Could not determine the effective UID for the D-Bus connection.");
         }
     }

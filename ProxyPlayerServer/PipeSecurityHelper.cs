@@ -10,7 +10,7 @@ namespace ProxyPlayerServer
         /// Creates a PipeSecurity to allow only the current user to access the named pipe.
         /// </summary>
         /// <remarks>
-        /// Not committing a MSI Center here.
+        /// Not committing an MSI Center here.
         /// </remarks>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
@@ -19,19 +19,19 @@ namespace ProxyPlayerServer
             var security = new PipeSecurity();
 
             var currentUser = WindowsIdentity.GetCurrent().User
-                ?? throw new InvalidOperationException("Unable to resolve current user SID.");
+                              ?? throw new InvalidOperationException("Unable to resolve current user SID.");
 
             security.AddAccessRule(new PipeAccessRule(
-                currentUser,
-                PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance,
-                AccessControlType.Allow));
+                                       currentUser,
+                                       PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance,
+                                       AccessControlType.Allow));
 
             // Deny any network/remote connections to the pipe for security reasons
             var networkSid = new SecurityIdentifier(WellKnownSidType.NetworkSid, null);
             security.AddAccessRule(new PipeAccessRule(
-                networkSid,
-                PipeAccessRights.FullControl,
-                AccessControlType.Deny));
+                                       networkSid,
+                                       PipeAccessRights.FullControl,
+                                       AccessControlType.Deny));
 
             return security;
         }

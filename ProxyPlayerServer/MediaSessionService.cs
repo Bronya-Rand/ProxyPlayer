@@ -18,7 +18,9 @@ namespace ProxyPlayerServer
         private GlobalSystemMediaTransportControlsSession? currentSession;
 
         private bool isInitializing;
-        private Windows.Foundation.TypedEventHandler<GlobalSystemMediaTransportControlsSessionManager, SessionsChangedEventArgs>? sessionsChangedHandler;
+
+        private Windows.Foundation.TypedEventHandler<GlobalSystemMediaTransportControlsSessionManager,
+            SessionsChangedEventArgs>? sessionsChangedHandler;
 
         // Metadata
         public string Title { get; private set; } = string.Empty;
@@ -57,8 +59,7 @@ namespace ProxyPlayerServer
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to initialize MediaSessionService: {ex.Message}");
-            }
-            finally
+            } finally
             {
                 isInitializing = false;
             }
@@ -66,15 +67,15 @@ namespace ProxyPlayerServer
 
         public string[] GetAvailableSessions() =>
             sessionManager?.GetSessions()
-                .Select(session => session.SourceAppUserModelId)
-                .ToArray() ?? [];
+                          .Select(session => session.SourceAppUserModelId)
+                          .ToArray() ?? [];
 
-        public string SetSelectedSession(string sessionId)
+        public void SetSelectedSession(string sessionId)
         {
             SelectedSessionId = sessionId;
             RefreshActiveSession();
-            return SelectedSessionId ?? string.Empty;
         }
+
         private void RefreshActiveSession()
         {
             if (sessionManager == null) return;
@@ -82,15 +83,13 @@ namespace ProxyPlayerServer
             var sessions = sessionManager.GetSessions();
 
             // If the selected session is no longer available, reset the selection
-            if (SelectedSessionId != null && !sessions.Any(s => s.SourceAppUserModelId == SelectedSessionId))
-            {
+            if (SelectedSessionId != null && sessions.All(s => s.SourceAppUserModelId != SelectedSessionId))
                 SelectedSessionId = null;
-            }
 
             // Determine the target session
             var target = SelectedSessionId != null
-                ? sessions.FirstOrDefault(s => s.SourceAppUserModelId == SelectedSessionId)
-                : sessionManager.GetCurrentSession();
+                             ? sessions.FirstOrDefault(s => s.SourceAppUserModelId == SelectedSessionId)
+                             : sessionManager.GetCurrentSession();
 
             if (currentSession != target)
             {
@@ -140,13 +139,16 @@ namespace ProxyPlayerServer
             }
         }
 
-        private void OnTimelinePropertiesChanged(GlobalSystemMediaTransportControlsSession session, TimelinePropertiesChangedEventArgs args) =>
+        private void OnTimelinePropertiesChanged(
+            GlobalSystemMediaTransportControlsSession session, TimelinePropertiesChangedEventArgs args) =>
             RefreshTimelineProperties();
 
-        private void OnMediaPropertiesChanged(GlobalSystemMediaTransportControlsSession session, MediaPropertiesChangedEventArgs args) =>
+        private void OnMediaPropertiesChanged(
+            GlobalSystemMediaTransportControlsSession session, MediaPropertiesChangedEventArgs args) =>
             _ = RefreshMediaPropertiesAsync();
 
-        private void OnPlaybackInfoChanged(GlobalSystemMediaTransportControlsSession session, PlaybackInfoChangedEventArgs args) =>
+        private void OnPlaybackInfoChanged(
+            GlobalSystemMediaTransportControlsSession session, PlaybackInfoChangedEventArgs args) =>
             RefreshPlaybackInfo();
 
         private void RefreshTimelineProperties(bool force = false)
@@ -161,11 +163,12 @@ namespace ProxyPlayerServer
             PositionSeconds = timeline.Position.TotalSeconds;
             DurationSeconds = Math.Max(0, duration);
             PositionLastUpdatedUtc = timeline.LastUpdatedTime != default
-                ? timeline.LastUpdatedTime.ToUniversalTime()
-                : DateTimeOffset.UtcNow;
+                                         ? timeline.LastUpdatedTime.ToUniversalTime()
+                                         : DateTimeOffset.UtcNow;
 
             OnSessionChanged?.Invoke();
         }
+
         private async Task RefreshMediaPropertiesAsync()
         {
             if (currentSession == null) return;
@@ -205,6 +208,7 @@ namespace ProxyPlayerServer
                 return [];
             }
         }
+
         private void RefreshPlaybackInfo()
         {
             if (currentSession == null) return;
@@ -219,6 +223,7 @@ namespace ProxyPlayerServer
 
             OnSessionChanged?.Invoke();
         }
+
         public async Task PlayPauseSessionAsync()
         {
             if (currentSession == null) return;
@@ -227,11 +232,13 @@ namespace ProxyPlayerServer
             else
                 await currentSession.TryPlayAsync();
         }
+
         public async Task StopAsync()
         {
             if (currentSession != null)
                 await currentSession.TryStopAsync();
         }
+
         public async Task ToggleShuffleAsync()
         {
             if (currentSession == null) return;
@@ -241,6 +248,7 @@ namespace ProxyPlayerServer
                 await currentSession.TryChangeShuffleActiveAsync(!playbackInfo.IsShuffleActive.Value);
             }
         }
+
         public async Task CycleRepeatModeAsync()
         {
             if (currentSession == null) return;
@@ -251,22 +259,24 @@ namespace ProxyPlayerServer
                 {
                     MediaPlaybackAutoRepeatMode.None => MediaPlaybackAutoRepeatMode.List,
                     MediaPlaybackAutoRepeatMode.List => MediaPlaybackAutoRepeatMode.Track,
-                    MediaPlaybackAutoRepeatMode.Track => MediaPlaybackAutoRepeatMode.None,
                     _ => MediaPlaybackAutoRepeatMode.None
                 };
                 await currentSession.TryChangeAutoRepeatModeAsync(nextMode);
             }
         }
+
         public async Task NextAsync()
         {
             if (currentSession != null)
                 await currentSession.TrySkipNextAsync();
         }
+
         public async Task PreviousAsync()
         {
             if (currentSession != null)
                 await currentSession.TrySkipPreviousAsync();
         }
+
         public void Dispose()
         {
             if (currentSession != null)
@@ -275,11 +285,11 @@ namespace ProxyPlayerServer
                 currentSession.PlaybackInfoChanged -= OnPlaybackInfoChanged;
                 currentSession.TimelinePropertiesChanged -= OnTimelinePropertiesChanged;
             }
+
             if (sessionManager != null && sessionsChangedHandler != null)
             {
                 sessionManager.SessionsChanged -= sessionsChangedHandler;
             }
-            GC.SuppressFinalize(this);
         }
     }
 }

@@ -15,7 +15,7 @@ namespace ProxyPlayer.Media
         public bool IsConnected { get; protected set; }
         public event Action? OnStateUpdated;
 
-        protected readonly CancellationTokenSource cts = new();
+        protected readonly CancellationTokenSource Cts = new();
         protected Task? ReceiveLoopTask;
 
         /// <summary>
@@ -30,6 +30,7 @@ namespace ProxyPlayer.Media
                 blob = result;
                 return true;
             }
+
             blob = [];
             return false;
         }
@@ -44,7 +45,7 @@ namespace ProxyPlayer.Media
         /// <summary>
         /// Resets the state of the media source when disconnected or no media session is active.
         /// </summary>
-        protected virtual void ResetState()
+        protected void ResetState()
         {
             CurrentState = new MediaState();
             CurrentBlobs.Clear();
@@ -56,11 +57,12 @@ namespace ProxyPlayer.Media
             Dispose(true);
             GC.SuppressFinalize(this);
         }
+
         protected virtual void Dispose(bool disposing)
         {
             if (!disposing) return;
 
-            cts.Cancel();
+            Cts.Cancel();
             try
             {
                 ReceiveLoopTask?.GetAwaiter().GetResult();
@@ -69,7 +71,8 @@ namespace ProxyPlayer.Media
             {
                 // Ignore exceptions during disposal
             }
-            cts.Dispose();
+
+            Cts.Dispose();
         }
     }
 }

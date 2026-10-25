@@ -1,14 +1,15 @@
 /*
  * ProxyPlayerServer - Handles connecting to Windows Media Controls from within XIV.
- * 
+ *
  * Do not run this process directly nor run this as admin. It must run as a user.
  * Attempting to run this as admin while XIV is not (why would you run the game as admin?)
  * will cause the connection to fail with UnauthorizedAccessException.
  */
+
 using ProxyPlayerServer;
 
-const string MutexName = "Local\\ProxyPlayerServer.SingleInstance";
-using var singleInstanceMutex = new Mutex(false, MutexName, out var _);
+const string mutexName = "Local\\ProxyPlayerServer.SingleInstance";
+using var singleInstanceMutex = new Mutex(false, mutexName, out var _);
 
 DebugLog.Flush();
 
@@ -16,7 +17,6 @@ bool acquired;
 try
 {
     acquired = singleInstanceMutex.WaitOne(0);
-
 }
 catch (AbandonedMutexException)
 {
@@ -44,8 +44,7 @@ try
 catch (Exception ex)
 {
     DebugLog.Write($"MediaProxy server encountered an error: {ex}");
-}
-finally
+} finally
 {
     singleInstanceMutex.ReleaseMutex();
 }

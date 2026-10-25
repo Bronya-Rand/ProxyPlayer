@@ -23,9 +23,9 @@ namespace ProxyPlayer.Windows.Layout
             var artSize = new Vector2(artHeight, artHeight);
 
             var coverTexture = state.HasThumbnail ? textures.GetTexture(BlobKeys.Thumbnail) : null;
-            if (coverTexture is { } tex)
+            if (coverTexture != null)
             {
-                ImGui.Image(tex.Handle, artSize);
+                ImGui.Image(coverTexture.Handle, artSize);
                 ImGui.SameLine();
             }
 
@@ -41,10 +41,12 @@ namespace ProxyPlayer.Windows.Layout
 
                 var metadataAvailWidth = ImGui.GetContentRegionAvail().X;
                 ImPlayer.TextScrolling("title###CompactLayoutTitle", state.Title, metadataAvailWidth);
-                ImPlayer.TextScrolling("artist###CompactLayoutArtist", state.Artist, metadataAvailWidth, new Vector4(0.7f, 0.7f, 0.7f, 1f));
+                ImPlayer.TextScrolling("artist###CompactLayoutArtist", state.Artist, metadataAvailWidth,
+                                       new Vector4(0.7f, 0.7f, 0.7f, 1f));
 
                 if (!state.Album.IsNullOrEmpty())
-                    ImPlayer.TextScrolling("album###CompactLayoutAlbum", state.Album, metadataAvailWidth, new Vector4(0.7f, 0.7f, 0.7f, 1f));
+                    ImPlayer.TextScrolling("album###CompactLayoutAlbum", state.Album, metadataAvailWidth,
+                                           new Vector4(0.7f, 0.7f, 0.7f, 1f));
             }
 
             // Progress bar

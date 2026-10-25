@@ -109,7 +109,6 @@ namespace ProxyPlayer.Utility
             {
                 // Pause at the end
                 offset = overflowWidth;
-
             }
             else
             {
@@ -119,7 +118,9 @@ namespace ProxyPlayer.Utility
             }
 
             // Render text
-            using var child = ImRaii.Child($"scroll_{id}", new Vector2(availWidth, textSize.Y), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+            using var child = ImRaii.Child($"scroll_{id}", new Vector2(availWidth, textSize.Y), false,
+                                           ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+            
             {
                 if (child)
                 {

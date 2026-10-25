@@ -39,8 +39,8 @@ namespace ProxyPlayer.Media.MPRIS
 
         public MprisMediaSource()
         {
-            ReceiveLoopTask = Task.Run(() => ConnectLoopAsync(cts.Token));
-            _ = Task.Run(() => PositionPollLoopAsync(cts.Token));
+            ReceiveLoopTask = Task.Run(() => ConnectLoopAsync(Cts.Token));
+            _ = Task.Run(() => PositionPollLoopAsync(Cts.Token));
         }
 
         private async Task ConnectLoopAsync(CancellationToken cancellationToken)
@@ -134,9 +134,9 @@ namespace ProxyPlayer.Media.MPRIS
         {
             if (!notification.HasValue || notification.Value is not NameOwnerChanged { } nameOwnerChanged) return;
             // Guard: Don't attempt to process events after cancellation
-            if (cts.IsCancellationRequested) return;
+            if (Cts.IsCancellationRequested) return;
 
-            await sessionLock.WaitAsync(cts.Token).ConfigureAwait(false);
+            await sessionLock.WaitAsync(Cts.Token).ConfigureAwait(false);
             try
             {
                 var appeared = nameOwnerChanged.OldOwner.IsNullOrEmpty() && !nameOwnerChanged.NewOwner.IsNullOrEmpty();
@@ -159,7 +159,7 @@ namespace ProxyPlayer.Media.MPRIS
                 if (selectedPlayer == null || !knownPlayers.Contains(selectedPlayer))
                     selectedPlayer = knownPlayers.FirstOrDefault();
 
-                await SwitchActivePlayerAsync(cts.Token).ConfigureAwait(false);
+                await SwitchActivePlayerAsync(Cts.Token).ConfigureAwait(false);
             }
             finally
             {
@@ -168,15 +168,15 @@ namespace ProxyPlayer.Media.MPRIS
         }
         public override async Task SendCommandAsync(MediaCommand command, string? targetAppId = null)
         {
-            if (dBus == null || cts.IsCancellationRequested) return;
+            if (dBus == null || Cts.IsCancellationRequested) return;
 
             if (command == MediaCommand.SelectSession && !targetAppId.IsNullOrEmpty())
             {
-                await sessionLock.WaitAsync(cts.Token).ConfigureAwait(false);
+                await sessionLock.WaitAsync(Cts.Token).ConfigureAwait(false);
                 try
                 {
                     selectedPlayer = targetAppId;
-                    await SwitchActivePlayerAsync(cts.Token).ConfigureAwait(false);
+                    await SwitchActivePlayerAsync(Cts.Token).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -216,6 +216,10 @@ namespace ProxyPlayer.Media.MPRIS
                     };
                     await player.SetLoopStatusAsync(nextRepeat).ConfigureAwait(false);
                     break;
+                case MediaCommand.SelectSession:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(command), command, null);
             }
         }
         private async Task SwitchActivePlayerAsync(CancellationToken cancellationToken)
@@ -241,7 +245,7 @@ namespace ProxyPlayer.Media.MPRIS
         {
             if (dBus == null || selectedPlayer == null) return;
             var proxy = new Player(dBus, selectedPlayer, PlayerPath);
-            await RebuildStateAsync(proxy, cts.Token).ConfigureAwait(false);
+            await RebuildStateAsync(proxy, Cts.Token).ConfigureAwait(false);
         }
         private async Task RebuildStateAsync(Player proxy, CancellationToken cancellationToken)
         {
@@ -342,7 +346,10 @@ namespace ProxyPlayer.Media.MPRIS
                 var identity = await root.GetIdentityAsync().ConfigureAwait(false);
                 if (!identity.IsNullOrEmpty()) return identity;
             }
-            catch { }
+            catch
+            {
+                // ignored
+            }
 
             var suffix = busName[MprisPrefix.Length..];
             var dot = suffix.IndexOf('.');
@@ -354,14 +361,17 @@ namespace ProxyPlayer.Media.MPRIS
             try
             {
                 var uri = new Uri(artUrl);
-                if (uri.Scheme is "http" or "https")
-                    return await httpClient.GetByteArrayAsync(uri, cancellationToken).ConfigureAwait(false);
-
-                if (uri.Scheme == "file")
+                switch (uri.Scheme)
                 {
-                    var winePath = "Z:" + uri.LocalPath.Replace('/', '\\');
-                    if (File.Exists(winePath))
-                        return await File.ReadAllBytesAsync(winePath, cancellationToken).ConfigureAwait(false);
+                    case "http" or "https":
+                        return await httpClient.GetByteArrayAsync(uri, cancellationToken).ConfigureAwait(false);
+                    case "file":
+                    {
+                        var winePath = "Z:" + uri.LocalPath.Replace('/', '\\');
+                        if (File.Exists(winePath))
+                            return await File.ReadAllBytesAsync(winePath, cancellationToken).ConfigureAwait(false);
+                        break;
+                    }
                 }
             }
             catch (Exception ex)

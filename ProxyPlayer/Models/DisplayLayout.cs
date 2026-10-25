@@ -9,14 +9,15 @@ namespace ProxyPlayer.Models
     }
     public static class DisplayLayoutExtensions
     {
-        public static string ToFriendlyString(this DisplayLayout layout)
+        extension(DisplayLayout layout)
         {
-            return layout switch
-            {
-                DisplayLayout.Compact => "Compact",
-                DisplayLayout.Portrait => "Portrait",
-                _ => throw new ArgumentOutOfRangeException(nameof(layout), layout, null)
-            };
+            public string ToFriendlyString() =>
+                layout switch
+                {
+                    DisplayLayout.Compact => "Compact",
+                    DisplayLayout.Portrait => "Portrait",
+                    _ => throw new ArgumentOutOfRangeException(nameof(layout), layout, null)
+                };
         }
     }
 }

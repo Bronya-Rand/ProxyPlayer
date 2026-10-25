@@ -44,6 +44,7 @@ namespace ProxyPlayer.Models
 
         bool TryGetThumbnail(out byte[] thumbnail) =>
             TryGetBlob(BlobKeys.Thumbnail, out thumbnail);
+
         Task PlayPauseAsync() => SendCommandAsync(MediaCommand.PlayPause);
         Task NextAsync() => SendCommandAsync(MediaCommand.Next);
         Task PreviousAsync() => SendCommandAsync(MediaCommand.Previous);
