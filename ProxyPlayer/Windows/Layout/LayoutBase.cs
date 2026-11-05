@@ -12,7 +12,8 @@ namespace ProxyPlayer.Windows.Layout
 {
     public abstract class LayoutBase : ILayoutBase
     {
-        public virtual Vector2 CoverArtDimensions { get; }
+        private const FontAwesomeIcon SyncIcon = FontAwesomeIcon.Sync;
+        private const float ProgressBarHeight = 2f;
         public Action? OnRequestSessionListOpen { get; set; }
 
         public abstract void Draw(MediaState mediaState, IMediaSource mediaSource, TextureCache texture);
@@ -21,20 +22,34 @@ namespace ProxyPlayer.Windows.Layout
         /// Draws the progress bar for the given media state.
         /// </summary>
         /// <param name="mediaState">The media state to draw the progress bar for.</param>
-        public static void DrawProgressBar(MediaState mediaState)
+        /// <param name="width">The available width space in the media window.</param>
+        private static void DrawProgressBar(MediaState mediaState, float width)
         {
-            // Plugin.Log.Debug($"Current Position: {mediaState.PositionSeconds}, Duration: {mediaState.DurationSeconds}, Playback Status: {mediaState.PlaybackStatus}");
             if (mediaState.DurationSeconds > 0)
             {
                 var currentPosition = TrackMetadata.GetInterpolatedPosition(mediaState);
                 var progress = currentPosition / (float)mediaState.DurationSeconds;
-                ImGui.ProgressBar(progress, new Vector2(-1, 2), string.Empty);
+                ImGui.ProgressBar(progress, new Vector2(width, ProgressBarHeight), string.Empty);
 
                 using (ImRaii.Group())
                 {
-                    ImGui.Text($"{TimeSpan.FromSeconds(currentPosition):mm\\:ss}");
-                    ImGui.SameLine(ImGui.GetContentRegionAvail().X - 40);
-                    ImGui.Text($"{TimeSpan.FromSeconds(mediaState.DurationSeconds):mm\\:ss}");
+                    var positionText = $"{TimeSpan.FromSeconds(currentPosition):mm\\:ss}";
+                    var durationText = $"{TimeSpan.FromSeconds(mediaState.DurationSeconds):mm\\:ss}";
+
+                    var rowLeft = ImGui.GetCursorPosX();
+                    var durationWidth = ImGui.CalcTextSize(durationText).X;
+                    var durationX = rowLeft + width - durationWidth;
+                    var requiredWidth = ImGui.CalcTextSize(positionText).X
+                                        + ImGui.GetStyle().ItemSpacing.X
+                                        + durationWidth;
+                    
+                    ImGui.Text(positionText);
+                    if (requiredWidth <= width)
+                    {
+                        ImGui.SameLine();
+                        ImGui.SetCursorPosX(durationX);
+                    }
+                    ImGui.Text(durationText);
                 }
             }
         }
@@ -44,10 +59,9 @@ namespace ProxyPlayer.Windows.Layout
         /// </summary>
         /// <param name="mediaState">The media state to draw controls for.</param>
         /// <param name="mediaSource">The pipe client to use for sending commands.</param>
-        protected static void DrawPlaybackControlsCentered(MediaState mediaState, IMediaSource mediaSource)
+        /// <param name="width">The available width space in the media window.</param>
+        private static void DrawPlaybackControlsCentered(MediaState mediaState, IMediaSource mediaSource, float width)
         {
-            var availWidth = ImGui.GetContentRegionAvail().X;
-
             // Center the playback controls
             var spacing = ImGui.GetStyle().ItemSpacing.X;
 
@@ -90,7 +104,7 @@ namespace ProxyPlayer.Windows.Layout
 
             totalWidth += spacing * (buttonCount - 1);
 
-            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((availWidth - totalWidth) / 2));
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((width - totalWidth) / 2));
 
             using (ImRaii.Group())
             {
@@ -150,10 +164,74 @@ namespace ProxyPlayer.Windows.Layout
             }
         }
 
+        protected static Vector2 GetSessionSelectButtonSize()
+        {
+            using (ImRaii.PushFont(UiBuilder.IconFont))
+            {
+                return ImGui.CalcTextSize(SyncIcon.ToIconString());
+            }
+        }
+        
         protected void DrawSessionSelectButton(string id)
         {
             if (ImPlayer.DrawClickableIcon($"select_session###{id}", FontAwesomeIcon.Sync, "Select Session"))
                 OnRequestSessionListOpen?.Invoke();
+        }
+
+        protected static void DrawTransportSection(MediaState state, IMediaSource mediaSource)
+        {
+            var width = ImGui.GetContentRegionAvail().X;
+            
+            DrawProgressBar(state, width);
+            DrawPlaybackControlsCentered(state, mediaSource, width);
+        }
+
+        protected static float MeasureTransportHeight(MediaState state, float width)
+        {
+            var spacing = ImGui.GetStyle().ItemSpacing;
+            var controlsHeight = 0f;
+
+            using (ImRaii.PushFont(UiBuilder.IconFont))
+            {
+                void IncludeIcon(FontAwesomeIcon icon)
+                {
+                    controlsHeight = Math.Max(controlsHeight,
+                        ImGui.CalcTextSize(icon.ToIconString()).Y);
+                }
+                
+                IncludeIcon(FontAwesomeIcon.StepBackward);
+                IncludeIcon(state.PlaybackStatus == "Playing" ? FontAwesomeIcon.Pause : FontAwesomeIcon.Play);
+                IncludeIcon(FontAwesomeIcon.StepForward);
+                
+                if (state.SupportsStop)
+                    IncludeIcon(FontAwesomeIcon.Stop);
+                if (state.SupportsRepeat)
+                    IncludeIcon(FontAwesomeIcon.Repeat);
+                if (state.SupportsShuffling)
+                    IncludeIcon(FontAwesomeIcon.Random);
+            }
+
+            if (state.DurationSeconds <= 0f)
+                return controlsHeight;
+
+            var position = TrackMetadata.GetInterpolatedPosition(state);
+            var positionText = $"{TimeSpan.FromSeconds(position):mm\\:ss}";
+            var durationText = $"{TimeSpan.FromSeconds(state.DurationSeconds):mm\\:ss}";
+
+            var positionSize = ImGui.CalcTextSize(positionText);
+            var durationSize = ImGui.CalcTextSize(durationText);
+            
+            var timesFit = positionSize.X + spacing.X + durationSize.X <= width;
+            
+            var timesHeight = timesFit
+                ? Math.Max(positionSize.Y, durationSize.Y)
+                : positionSize.Y + spacing.Y + durationSize.Y;
+
+            return ProgressBarHeight
+                   + spacing.Y
+                   + timesHeight
+                   + spacing.Y
+                   + controlsHeight;
         }
     }
 }

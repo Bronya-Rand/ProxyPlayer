@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
@@ -14,46 +15,62 @@ namespace ProxyPlayer.Windows.Layout
     /// </summary>
     public sealed class CompactLayout : LayoutBase
     {
+        private const string MetadataWidthPlaceholder = "MMMMMMMMMMMMMMMMMMMMMMMM";
+
         public override void Draw(MediaState state, IMediaSource mediaSource, TextureCache textures)
         {
-            var lineCount = string.IsNullOrEmpty(state.Album) ? 3 : 4;
-            var lineHeight = ImGui.GetTextLineHeight();
-            var spacingY = ImGui.GetStyle().ItemSpacing.Y;
-            var artHeight = (lineCount * lineHeight) + ((lineCount - 1) * spacingY);
-            var artSize = new Vector2(artHeight, artHeight);
+            var available = ImGui.GetContentRegionAvail();
+            var spacing = ImGui.GetStyle().ItemSpacing;
+
+            var transportHeight = MeasureTransportHeight(state, available.X);
+            var minimumMetadataWidth = ImGui.CalcTextSize(MetadataWidthPlaceholder).X;
+            var maxArtHeight = available.Y - transportHeight - spacing.Y;
+            var maxArtWidth = available.X - minimumMetadataWidth - spacing.X;
+
+            var artSide = Math.Max(0f, Math.Min(maxArtHeight, maxArtWidth));
 
             var coverTexture = state.HasThumbnail ? textures.GetTexture(BlobKeys.Thumbnail) : null;
-            if (coverTexture != null)
+            if (coverTexture != null && artSide > 0f)
             {
-                ImGui.Image(coverTexture.Handle, artSize);
+                ImGui.Image(coverTexture.Handle, new Vector2(artSide, artSide));
                 ImGui.SameLine();
             }
 
             using (ImRaii.Group())
             {
-                var friendlyName = TrackMetadata.GetFriendlyAppName(state);
+                var metadataLeft = ImGui.GetCursorPosX();
+                var metadataWidth = available.X - spacing.X - artSide;
+
+                var iconWidth = GetSessionSelectButtonSize().X;
+                var sourceWidth = metadataWidth - spacing.X - iconWidth;
+                var sourceFitsBesideButton = sourceWidth > 0;
+                var sourceTextWidth = sourceFitsBesideButton ? sourceWidth : metadataWidth;
 
                 // App Name (or address)
-                ImGui.TextDisabled(friendlyName);
+                // Use metadata width if sourceWidth is zero or negative
+                var friendlyName = TrackMetadata.GetFriendlyAppName(state);
+                ImPlayer.TextScrolling("session###CompactLayoutSessionName", friendlyName, sourceTextWidth,
+                                       new Vector4(0.7f, 0.7f, 0.7f, 1f));
 
-                ImGui.SameLine(ImGui.GetContentRegionAvail().X - 24);
+                if (sourceFitsBesideButton)
+                {
+                    ImGui.SameLine();
+                    ImGui.SetCursorPosX(metadataLeft + metadataWidth - iconWidth);
+                }
+
                 DrawSessionSelectButton("CompactLayoutSelectSession");
 
-                var metadataAvailWidth = ImGui.GetContentRegionAvail().X;
-                ImPlayer.TextScrolling("title###CompactLayoutTitle", state.Title, metadataAvailWidth);
-                ImPlayer.TextScrolling("artist###CompactLayoutArtist", state.Artist, metadataAvailWidth,
+                ImPlayer.TextScrolling("title###CompactLayoutTitle", state.Title, metadataWidth);
+                ImPlayer.TextScrolling("artist###CompactLayoutArtist", state.Artist, metadataWidth,
                                        new Vector4(0.7f, 0.7f, 0.7f, 1f));
 
                 if (!state.Album.IsNullOrEmpty())
-                    ImPlayer.TextScrolling("album###CompactLayoutAlbum", state.Album, metadataAvailWidth,
+                    ImPlayer.TextScrolling("album###CompactLayoutAlbum", state.Album, metadataWidth,
                                            new Vector4(0.7f, 0.7f, 0.7f, 1f));
             }
 
-            // Progress bar
-            DrawProgressBar(state);
-
-            // Playback controls
-            DrawPlaybackControlsCentered(state, mediaSource);
+            // Progress bar / Playback controls
+            DrawTransportSection(state, mediaSource);
         }
     }
 }

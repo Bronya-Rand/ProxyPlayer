@@ -12,6 +12,9 @@ namespace ProxyPlayer.Windows;
 
 public class MainWindow : Window, IDisposable
 {
+    private static readonly Vector2 CompactMinSize = new Vector2(375, 150);
+    private static readonly Vector2 PortraitMinSize = new Vector2(375, 350);
+
     private const string NoSessionSelectedText = "No media session selected.";
 
     private readonly Plugin plugin;
@@ -23,15 +26,9 @@ public class MainWindow : Window, IDisposable
     private readonly PortraitLayout portraitLayout;
 
     public MainWindow(Plugin plugin, IMediaSource mediaSource)
-        : base("ProxyPlayer - Now Playing##ProxyPlayerNowPlaying",
+        : base("ProxyPlayer##ProxyPlayerNowPlaying",
                ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
-        Flags = ImGuiWindowFlags.AlwaysAutoResize;
-        SizeConstraints = new WindowSizeConstraints
-        {
-            MinimumSize = new Vector2(375, 150),
-            MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
-        };
         SizeCondition = ImGuiCond.FirstUseEver;
 
         this.mediaSource = mediaSource;
@@ -55,6 +52,19 @@ public class MainWindow : Window, IDisposable
     }
 
     public void Dispose() => GC.SuppressFinalize(this);
+
+    public override void PreDraw()
+    {
+        var minSize = plugin.Configuration.PlayerDisplayLayout == DisplayLayout.Compact
+                          ? CompactMinSize
+                          : PortraitMinSize;
+
+        SizeConstraints = new WindowSizeConstraints
+        {
+            MinimumSize = minSize,
+            MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
+        };
+    }
 
     public override void Draw()
     {
