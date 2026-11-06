@@ -147,6 +147,12 @@ public abstract class LayoutResNode : ResNode
             DurationTimeNode.String = FormatTime(value.DurationSeconds);
             PlayPauseButton.String = value.PlaybackStatus == "Playing" ? "Pause" : "Play";
 
+            if (value.DurationSeconds <= 0f)
+            {
+                TimeRow.IsVisible = false;
+                ProgressBarNode.IsVisible = false;
+            }
+
             ShuffleButton.IsVisible = value.SupportsShuffling;
             RepeatButton.IsVisible = value.SupportsRepeat;
             ShuffleButton.TextTooltip = value.IsShuffleActive ? "Shuffle: On" : "Shuffle: Off";
