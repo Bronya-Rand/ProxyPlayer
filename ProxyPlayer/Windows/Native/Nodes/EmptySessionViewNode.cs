@@ -10,6 +10,7 @@ public sealed class EmptySessionViewNode : ResNode
 {
     private const string NoSessionText = "No media session active";
     private const string SelectSessionButtonText = "Select Music Source";
+    private readonly VerticalListNode? layout;
 
     public EmptySessionViewNode(Vector2 contentSize)
     {
@@ -38,7 +39,7 @@ public sealed class EmptySessionViewNode : ResNode
             InitialNodes = [selectSourceButton]
         };
 
-        new VerticalListNode
+        layout = new VerticalListNode
         {
             FitWidth = true,
             Alignment = VerticalListAlignment.Left,
@@ -50,8 +51,18 @@ public sealed class EmptySessionViewNode : ResNode
                 messageNode,
                 buttonRow
             ]
-        }.AttachNode(this);
+        };
+        layout.AttachNode(this);
     }
 
     public Action? OnSelectSession { get; init; }
+
+    protected override void OnSizeChanged()
+    {
+        base.OnSizeChanged();
+        if (layout is null) return;
+        layout.Size = Size;
+        layout.Nodes[0].Height = Height / 3;
+        layout.RecalculateLayout();
+    }
 }

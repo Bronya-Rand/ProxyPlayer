@@ -4,6 +4,7 @@ using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.BaseTypes;
+using KamiToolKit.Enums;
 using KamiToolKit.Nodes;
 using ProxyPlayer.Models;
 using ProxyPlayer.Shared;
@@ -15,6 +16,7 @@ public abstract class LayoutResNode : ResNode
 {
     protected readonly TextNode AlbumNode;
     protected readonly TextNode ArtistNode;
+    protected readonly HorizontalFlexNode ControlsRow;
 
     // ATK Nodes
     protected readonly ImGuiImageNode CoverArtNode;
@@ -31,8 +33,10 @@ public abstract class LayoutResNode : ResNode
     protected readonly TextNode SessionNameNode;
     protected readonly TextButtonNode ShuffleButton;
     protected readonly TextButtonNode SourcesButton;
+    protected readonly HorizontalFlexNode TimeRow;
     protected readonly TextNode TitleNode;
     protected LayoutListNode RootLayout = null!;
+    private long displayedPositionSeconds = -1;
 
     protected LayoutResNode(IMediaSource mediaSource)
     {
@@ -81,46 +85,91 @@ public abstract class LayoutResNode : ResNode
             OnClick = () => OnRequestSessionList?.Invoke()
         };
         PlayPauseButton = new TextButtonNode
-            { String = "Play", Width = 80f, Height = 26f, OnClick = () => MediaSource.PlayPauseAsync() };
+            { String = "Play", Width = 72f, Height = 26f, OnClick = () => _ = MediaSource.PlayPauseAsync() };
         ShuffleButton = new TextButtonNode
-            { String = "Shuffle", Width = 80f, Height = 26f, OnClick = () => _ = MediaSource.ToggleShuffleAsync() };
+            { String = "Shuffle", Width = 72f, Height = 26f, OnClick = () => _ = MediaSource.ToggleShuffleAsync() };
         RepeatButton = new TextButtonNode
-            { String = "Repeat", Width = 80f, Height = 26f, OnClick = () => _ = MediaSource.ToggleRepeatAsync() };
+            { String = "Repeat", Width = 72f, Height = 26f, OnClick = () => _ = MediaSource.ToggleRepeatAsync() };
         PrevButton = new TextButtonNode
-            { String = "< Prev", Width = 80f, Height = 26f, OnClick = () => _ = MediaSource.PreviousAsync() };
+            { String = "< Prev", Width = 72f, Height = 26f, OnClick = () => _ = MediaSource.PreviousAsync() };
         NextButton = new TextButtonNode
-            { String = "Next >", Width = 80f, Height = 26f, OnClick = () => _ = MediaSource.NextAsync() };
+            { String = "Next >", Width = 72f, Height = 26f, OnClick = () => _ = MediaSource.NextAsync() };
+
+        TimeRow = new HorizontalFlexNode
+        {
+            Width = 400f,
+            Height = 16f,
+            AlignmentFlags = FlexFlags.FitWidth | FlexFlags.CenterVertically,
+            InitialNodes = [PositionTimeNode, DurationTimeNode]
+        };
+        ControlsRow = new HorizontalFlexNode
+        {
+            Height = 28f,
+            AlignmentFlags = FlexFlags.CenterHorizontally | FlexFlags.CenterVertically,
+            InitialNodes =
+            [
+                new HorizontalListNode
+                {
+                    Height = 26f,
+                    ItemSpacing = 6f,
+                    FitToContentWidth = true,
+                    InitialNodes = [ShuffleButton, PrevButton, PlayPauseButton, NextButton, RepeatButton]
+                }
+            ]
+        };
     }
 
+    /// <summary>
+    /// Opens the Session modal.
+    /// </summary>
     public Action? OnRequestSessionList { get; init; }
+
+    /// <summary>
+    /// Sets the window size of the window.
+    /// </summary>
     public abstract Vector2 PreferredWindowSize { get; }
 
+    /// <summary>
+    /// Updates the metadata and player abilities on song/player change.
+    /// </summary>
     public MediaState State
     {
         set
         {
+            var layoutChanged = AlbumNode.IsVisible != !value.Album.IsNullOrEmpty()
+                                || ShuffleButton.IsVisible != value.SupportsShuffling
+                                || RepeatButton.IsVisible != value.SupportsRepeat;
             SessionNameNode.String = TrackMetadata.GetFriendlyAppName(value);
             TitleNode.String = value.Title.IsNullOrEmpty() ? "Unknown Title" : value.Title;
             ArtistNode.String = value.Artist.IsNullOrEmpty() ? "Unknown Artist" : value.Artist;
             AlbumNode.IsVisible = !value.Album.IsNullOrEmpty();
             if (AlbumNode.IsVisible) AlbumNode.String = value.Album;
-            //AlbumNode.String = "Test";
-
-            DurationTimeNode.String = $"{TimeSpan.FromSeconds(value.DurationSeconds):mm\\:ss}";
+            DurationTimeNode.String = FormatTime(value.DurationSeconds);
             PlayPauseButton.String = value.PlaybackStatus == "Playing" ? "Pause" : "Play";
 
             ShuffleButton.IsVisible = value.SupportsShuffling;
             RepeatButton.IsVisible = value.SupportsRepeat;
+            ShuffleButton.TextTooltip = value.IsShuffleActive ? "Shuffle: On" : "Shuffle: Off";
+            RepeatButton.TextTooltip = value.RepeatMode switch
+            {
+                "Track" => "Repeat: Track",
+                "List" => "Repeat: All",
+                _ => "Repeat: Off"
+            };
 
-            RootLayout.RecalculateLayout();
+            UpdateProgress(value);
+            if (layoutChanged) RootLayout.RecalculateLayout();
         }
     }
 
-    /// <summary>Transfers ownership of a new, unshared texture to the image node.</summary>
+    /// <summary>
+    /// Handles updating the cover art on song/player switching with ownership.
+    /// </summary>
     public IDalamudTextureWrap? CoverArt
     {
         set
         {
+            var wasVisible = CoverArtNode.IsVisible;
             if (value != null)
             {
                 CoverArtNode.TextureSize = value.Size;
@@ -132,7 +181,7 @@ public abstract class LayoutResNode : ResNode
                 CoverArtNode.IsVisible = false;
             }
 
-            RootLayout.RecalculateLayout();
+            if (wasVisible != CoverArtNode.IsVisible) RootLayout.RecalculateLayout();
         }
     }
 
@@ -146,16 +195,32 @@ public abstract class LayoutResNode : ResNode
     }
 
     /// <summary>
-    /// Derived layouts
+    /// Builds the UI for the ResNode from a derived class.
     /// </summary>
     /// <returns></returns>
     protected abstract NodeBase BuildLayout();
 
     public void UpdateProgress(MediaState state)
     {
-        if (state.DurationSeconds <= 0) return;
-        var currentPos = TrackMetadata.GetInterpolatedPosition(state);
-        ProgressBarNode.Progress = Math.Clamp((float)(currentPos / state.DurationSeconds), 0f, 1f);
-        PositionTimeNode.String = $"{TimeSpan.FromSeconds(currentPos):mm\\:ss}";
+        var duration = double.IsFinite(state.DurationSeconds) && state.DurationSeconds > 0
+                           ? state.DurationSeconds
+                           : 0;
+        var currentPos = duration > 0 ? (double)TrackMetadata.GetInterpolatedPosition(state) : 0;
+        currentPos = double.IsFinite(currentPos) ? Math.Clamp(currentPos, 0, duration) : 0;
+        ProgressBarNode.Progress = duration > 0 ? (float)(currentPos / duration) : 0;
+
+        var seconds = (long)Math.Min(currentPos, TimeSpan.MaxValue.TotalSeconds - 1);
+        if (displayedPositionSeconds == seconds) return;
+        displayedPositionSeconds = seconds;
+        PositionTimeNode.String = FormatTime(seconds);
+    }
+
+    private static string FormatTime(double seconds)
+    {
+        if (!double.IsFinite(seconds) || seconds <= 0) return "00:00";
+        var time = TimeSpan.FromSeconds(Math.Min(Math.Floor(seconds), TimeSpan.MaxValue.TotalSeconds - 1));
+        return time.TotalHours >= 1
+                   ? $"{(long)time.TotalHours}:{time:mm\\:ss}"
+                   : $"{time:mm\\:ss}";
     }
 }

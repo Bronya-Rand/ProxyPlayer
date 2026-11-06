@@ -9,6 +9,7 @@ namespace ProxyPlayer.Windows.Native.Nodes;
 public sealed class DisconnectedViewNode : ResNode
 {
     private const string ServerNotRunningText = "Not connected to ProxyPlayer server";
+    private readonly VerticalListNode? layout;
 
     public DisconnectedViewNode(Vector2 contentSize)
     {
@@ -23,7 +24,7 @@ public sealed class DisconnectedViewNode : ResNode
             Height = 24f,
         };
 
-        new VerticalListNode
+        layout = new VerticalListNode
         {
             FitWidth = true,
             Alignment = VerticalListAlignment.Left,
@@ -34,6 +35,16 @@ public sealed class DisconnectedViewNode : ResNode
                 new ResNode { Height = contentSize.Y / 3 },
                 textNode,
             ]
-        }.AttachNode(this);
+        };
+        layout.AttachNode(this);
+    }
+
+    protected override void OnSizeChanged()
+    {
+        base.OnSizeChanged();
+        if (layout is null) return;
+        layout.Size = Size;
+        layout.Nodes[0].Height = Height / 3;
+        layout.RecalculateLayout();
     }
 }

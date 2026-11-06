@@ -11,7 +11,7 @@ using ProxyPlayer.Utility;
 namespace ProxyPlayer.Windows.Legacy.Layout
 {
     /// <summary>
-    /// Renders the player in a compact layout
+    /// Renders the player in a compact layout.
     /// </summary>
     public sealed class CompactLayout : LayoutBase
     {

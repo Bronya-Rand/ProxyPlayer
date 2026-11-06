@@ -7,6 +7,9 @@ using ProxyPlayer.Models;
 
 namespace ProxyPlayer.Windows.Native.Layout;
 
+/// <summary>
+/// Renders the player in a portrait layout.
+/// </summary>
 public sealed class PortraitPlayerNode : LayoutResNode
 {
     public PortraitPlayerNode(IMediaSource mediaSource, Vector2 contentSize) : base(mediaSource)
@@ -22,8 +25,10 @@ public sealed class PortraitPlayerNode : LayoutResNode
         InitializeLayout();
     }
 
+    /// <inheritdoc />
     public override Vector2 PreferredWindowSize => new(420f, 420f);
 
+    /// <inheritdoc />
     protected override NodeBase BuildLayout()
     {
         const float buttonWidth = 80f;
@@ -39,14 +44,9 @@ public sealed class PortraitPlayerNode : LayoutResNode
         {
             Width = Size.X,
             Height = buttonHeight,
-            ItemSpacing = 2f,
+            ItemSpacing = 6f,
             AlignmentFlags = FlexFlags.FitHeight | FlexFlags.CenterHorizontally,
-            InitialNodes =
-            [
-                new ResNode { Width = Size.X / 4 },
-                SessionNameNode,
-                SourcesButton
-            ]
+            InitialNodes = [new ResNode { Width = Size.X / 4 }, SessionNameNode, SourcesButton]
         };
 
         // Cover Art
@@ -58,24 +58,8 @@ public sealed class PortraitPlayerNode : LayoutResNode
             InitialNodes = [CoverArtNode]
         };
 
-        var timeRow = new HorizontalFlexNode
-        {
-            Width = Size.X,
-            Height = 16f,
-            AlignmentFlags = FlexFlags.FitWidth | FlexFlags.CenterVertically,
-            InitialNodes = [PositionTimeNode, DurationTimeNode]
-        };
-
-        // Play / Pause / Prev / Next
-        var controlsRow = new HorizontalFlexNode
-        {
-            Width = Size.X,
-            Height = 28f,
-            ItemSpacing = 6f,
-            AlignmentFlags = FlexFlags.FitHeight | FlexFlags.CenterHorizontally,
-            InitialNodes = [ShuffleButton, PrevButton, PlayPauseButton, NextButton, RepeatButton]
-        };
-
+        TimeRow.Width = Size.X;
+        ControlsRow.Width = Size.X;
         TitleNode.Width = Size.X;
         ArtistNode.Width = Size.X;
         AlbumNode.Width = Size.X;
@@ -93,8 +77,8 @@ public sealed class PortraitPlayerNode : LayoutResNode
                 ArtistNode,
                 AlbumNode,
                 ProgressBarNode,
-                timeRow,
-                controlsRow
+                TimeRow,
+                ControlsRow
             ]
         };
     }

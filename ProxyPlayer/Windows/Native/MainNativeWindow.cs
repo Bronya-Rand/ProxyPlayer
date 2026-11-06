@@ -42,13 +42,13 @@ public sealed class MainNativeWindow : NativeAddon
         this.mediaSource = mediaSource;
         sessionListModal = new SessionNativeModal(mediaSource)
         {
-            OnSelectSessionId = sessionId => _ =
-                                                 mediaSource.SelectSessionAsync(sessionId)
+            OnSelectSessionId = sessionId => _ = mediaSource.SelectSessionAsync(sessionId)
         };
     }
 
     private LayoutResNode ActiveLayout =>
-        playerLayouts[plugin.Configuration.PlayerDisplayLayout];
+        playerLayouts.GetValueOrDefault(plugin.Configuration.PlayerDisplayLayout)
+        ?? playerLayouts[DisplayLayout.Compact];
 
     protected override unsafe void OnSetup(AtkUnitBase* addon, Span<AtkValue> atkValueSpan)
     {
@@ -104,6 +104,7 @@ public sealed class MainNativeWindow : NativeAddon
 
     protected override unsafe void OnHide(AtkUnitBase* addon)
     {
+        sessionListModal.Close();
         InvalidateNodes();
         base.OnHide(addon);
     }
@@ -129,22 +130,25 @@ public sealed class MainNativeWindow : NativeAddon
         var isDisconnected = mediaSource is { IsConnected: false, SourceName: "Windows SMTC" };
         var hasNoSession = !isDisconnected && state.SelectedAppId.IsNullOrEmpty();
         var isPlaying = !isDisconnected && !hasNoSession;
-        var currentLayoutType = plugin.Configuration.PlayerDisplayLayout;
+        var activeLayout = ActiveLayout;
 
-        SetWindowSize((int)ActiveLayout.PreferredWindowSize.X, (int)ActiveLayout.PreferredWindowSize.Y);
+        if (Size != activeLayout.PreferredWindowSize)
+            SetWindowSize(activeLayout.PreferredWindowSize);
         contentRoot.Position = ContentStartPosition;
         contentRoot.Size = ContentSize;
-        disconnectedNode.Size = ContentSize;
-        emptySessionNode.Size = ContentSize;
+        if (disconnectedNode.Size != ContentSize)
+            disconnectedNode.Size = ContentSize;
+        if (emptySessionNode.Size != ContentSize)
+            emptySessionNode.Size = ContentSize;
 
         disconnectedNode.IsVisible = isDisconnected;
         emptySessionNode.IsVisible = hasNoSession;
 
-        foreach (var (layoutType, layoutNode) in playerLayouts)
-            layoutNode.IsVisible = isPlaying && layoutType == currentLayoutType;
+        foreach (var layoutNode in playerLayouts.Values)
+            layoutNode.IsVisible = isPlaying && layoutNode == activeLayout;
 
         if (isPlaying)
-            ActiveLayout.State = state;
+            activeLayout.State = state;
     }
 
     private void RefreshCoverArt()
@@ -173,14 +177,14 @@ public sealed class MainNativeWindow : NativeAddon
         IDalamudTextureWrap? wrap = null;
         try
         {
-            // Each image node owns its own wrapper; never borrow one from TextureCache.
+            // Each image node gets its own wrapper
             wrap = await Plugin.TextureProvider.CreateFromImageAsync(bytes);
             await Plugin.Framework.Run(() =>
             {
                 if (!nodesReady || generation != coverArtGeneration) return;
 
                 layout.CoverArt = wrap;
-                wrap = null; // Ownership transferred to the native image node.
+                wrap = null;
             });
         }
         catch (Exception ex)
@@ -194,15 +198,7 @@ public sealed class MainNativeWindow : NativeAddon
 
     private void HandleStateUpdated() => _ = ApplyStateUpdateAsync();
 
-    private void HandleDisplayLayoutChanged(DisplayLayout newLayout)
-    {
-        if (!nodesReady) return;
-        Plugin.Framework.Run(() =>
-        {
-            if (!nodesReady) return;
-            ApplyState(mediaSource.CurrentState);
-        });
-    }
+    private void HandleDisplayLayoutChanged(DisplayLayout newLayout) => HandleStateUpdated();
 
     private async Task ApplyStateUpdateAsync()
     {
@@ -225,6 +221,18 @@ public sealed class MainNativeWindow : NativeAddon
     public void CloseAddon()
     {
         sessionListModal.Close();
-        this.Close();
+        Close();
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        sessionListModal.Dispose();
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        await base.DisposeAsync();
+        await sessionListModal.DisposeAsync();
     }
 }
