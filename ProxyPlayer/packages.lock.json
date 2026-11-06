@@ -25,6 +25,9 @@
         "requested": "[0.95.1, )",
         "resolved": "0.95.1",
         "contentHash": "IbGhqZAqqgB/DkT70+lAk4MNv95tZtsTMFQ+S3uGy0aTfOkGVeFjeNJsX8dBI/3+CPnO5XW6lRQKGeFEgHElKw=="
+      },
+        "kamitoolkit": {
+            "type": "Project"
       }
     }
   }

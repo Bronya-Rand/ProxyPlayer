@@ -8,7 +8,7 @@ using ProxyPlayer.Models;
 using ProxyPlayer.Shared;
 using ProxyPlayer.Utility;
 
-namespace ProxyPlayer.Windows.Layout
+namespace ProxyPlayer.Windows.Legacy.Layout
 {
     public abstract class LayoutBase : ILayoutBase
     {
@@ -42,13 +42,14 @@ namespace ProxyPlayer.Windows.Layout
                     var requiredWidth = ImGui.CalcTextSize(positionText).X
                                         + ImGui.GetStyle().ItemSpacing.X
                                         + durationWidth;
-                    
+
                     ImGui.Text(positionText);
                     if (requiredWidth <= width)
                     {
                         ImGui.SameLine();
                         ImGui.SetCursorPosX(durationX);
                     }
+
                     ImGui.Text(durationText);
                 }
             }
@@ -65,7 +66,7 @@ namespace ProxyPlayer.Windows.Layout
             // Center the playback controls
             var spacing = ImGui.GetStyle().ItemSpacing.X;
 
-            float prevWidth = 0, playWidth = 0, stopWidth = 0, nextWidth = 0, repeatWidth = 0, shuffleWidth = 0;
+            float prevWidth, playWidth, stopWidth = 0, nextWidth, repeatWidth = 0, shuffleWidth = 0;
             using (ImRaii.PushFont(UiBuilder.IconFont))
             {
                 prevWidth = ImGui.CalcTextSize(FontAwesomeIcon.StepBackward.ToIconString()).X;
@@ -171,7 +172,7 @@ namespace ProxyPlayer.Windows.Layout
                 return ImGui.CalcTextSize(SyncIcon.ToIconString());
             }
         }
-        
+
         protected void DrawSessionSelectButton(string id)
         {
             if (ImPlayer.DrawClickableIcon($"select_session###{id}", FontAwesomeIcon.Sync, "Select Session"))
@@ -181,7 +182,7 @@ namespace ProxyPlayer.Windows.Layout
         protected static void DrawTransportSection(MediaState state, IMediaSource mediaSource)
         {
             var width = ImGui.GetContentRegionAvail().X;
-            
+
             DrawProgressBar(state, width);
             DrawPlaybackControlsCentered(state, mediaSource, width);
         }
@@ -196,13 +197,13 @@ namespace ProxyPlayer.Windows.Layout
                 void IncludeIcon(FontAwesomeIcon icon)
                 {
                     controlsHeight = Math.Max(controlsHeight,
-                        ImGui.CalcTextSize(icon.ToIconString()).Y);
+                                              ImGui.CalcTextSize(icon.ToIconString()).Y);
                 }
-                
+
                 IncludeIcon(FontAwesomeIcon.StepBackward);
                 IncludeIcon(state.PlaybackStatus == "Playing" ? FontAwesomeIcon.Pause : FontAwesomeIcon.Play);
                 IncludeIcon(FontAwesomeIcon.StepForward);
-                
+
                 if (state.SupportsStop)
                     IncludeIcon(FontAwesomeIcon.Stop);
                 if (state.SupportsRepeat)
@@ -220,12 +221,12 @@ namespace ProxyPlayer.Windows.Layout
 
             var positionSize = ImGui.CalcTextSize(positionText);
             var durationSize = ImGui.CalcTextSize(durationText);
-            
+
             var timesFit = positionSize.X + spacing.X + durationSize.X <= width;
-            
+
             var timesHeight = timesFit
-                ? Math.Max(positionSize.Y, durationSize.Y)
-                : positionSize.Y + spacing.Y + durationSize.Y;
+                                  ? Math.Max(positionSize.Y, durationSize.Y)
+                                  : positionSize.Y + spacing.Y + durationSize.Y;
 
             return ProgressBarHeight
                    + spacing.Y

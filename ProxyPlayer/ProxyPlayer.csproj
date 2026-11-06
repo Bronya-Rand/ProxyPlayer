@@ -1,47 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
-  <PropertyGroup>
-    <Version>1.1.3.0</Version>
-    <Author>Bronya Rand</Author>
-    <Company>Bronya Rand</Company>
-    <Name>ProxyPlayer</Name>
-    <Punchline>Control what's playing on your computer within XIV!</Punchline>
-    <Description>ProxyPlayer is a simple plugin that allows you to control your Windows or Linux* PC's media playback from within XIV.
-&gt; * - Linux support is only supported on official XIVLauncher Wine builds and certain Wine/Proton builds with "AF_UNIX" support.
+    <PropertyGroup>
+        <Version>1.2.0.0</Version>
+        <Author>Bronya Rand</Author>
+        <Company>Bronya Rand</Company>
+        <Name>ProxyPlayer</Name>
+        <Punchline>Control what's playing on your computer within XIV!</Punchline>
+        <Description>ProxyPlayer is a simple plugin that allows you to control your Windows or Linux* PC's media playback from within XIV.
+            &gt; * - Linux support is only supported on official XIVLauncher Wine builds and certain Wine/Proton builds with "AF_UNIX" support.
 
-Control your media player from within the game, without having to alt-tab or use a second monitor.
-Features (depending on your media player):
-- Play/Pause
-- Next/Previous Track
-- Stop
-- Progress Bar
-- Cover Art Display
-- Metadata
+            Control your media player from within the game, without having to alt-tab or use a second monitor.
+            Features (depending on your media player):
+            - Play/Pause
+            - Next/Previous Track
+            - Stop
+            - Progress Bar
+            - Cover Art Display
+            - Metadata
 
-ProxyPlayer comes with either a compact or portrait UI for displaying your media information.
-    </Description>
-    <Tags>music;proxy;player;media;windows;smtc;linux;mpris;wine</Tags>
-    <CategoryTags>utility;ui;other</CategoryTags>
-    <PackageProjectUrl>https://github.com/Bronya-Rand/ProxyPlayer</PackageProjectUrl>
-    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
-  <ItemGroup>
-    <AdditionalFiles Include="Media\MPRIS\Interpolation\org.mpris.MediaPlayer2.Player.xml" Namespace="Mpris.MediaPlayer2.Player" DBusGeneratorMode="Proxy" />
-    <AdditionalFiles Include="Media\MPRIS\Interpolation\org.mpris.MediaPlayer2.xml" Namespace="Mpris.MediaPlayer2" DBusGeneratorMode="Proxy" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Update="DotNet.ReproducibleBuilds" Version="2.0.5" />
-  </ItemGroup>
+            ProxyPlayer comes with either a compact or portrait UI for displaying your media information.
+        </Description>
+        <Tags>music;proxy;player;media;windows;smtc;linux;mpris;wine</Tags>
+        <CategoryTags>utility;ui;other</CategoryTags>
+        <PackageProjectUrl>https://github.com/Bronya-Rand/ProxyPlayer</PackageProjectUrl>
+        <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+    <ItemGroup>
+        <AdditionalFiles Include="Media\MPRIS\Interpolation\org.mpris.MediaPlayer2.Player.xml" Namespace="Mpris.MediaPlayer2.Player" DBusGeneratorMode="Proxy"/>
+        <AdditionalFiles Include="Media\MPRIS\Interpolation\org.mpris.MediaPlayer2.xml" Namespace="Mpris.MediaPlayer2" DBusGeneratorMode="Proxy"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Update="DotNet.ReproducibleBuilds" Version="2.0.5"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Include="Resources\binaries\ProxyPlayerServer.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+    <ItemGroup>
+        <None Include="Resources\binaries\ProxyPlayerServer.exe">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Tmds.DBus.Generator" Version="0.95.1" />
-    <PackageReference Include="Tmds.DBus.Protocol" Version="0.95.1" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Tmds.DBus.Generator" Version="0.95.1"/>
+        <PackageReference Include="Tmds.DBus.Protocol" Version="0.95.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\KamiToolKit\KamiToolKit.csproj"/>
+    </ItemGroup>
 </Project>
