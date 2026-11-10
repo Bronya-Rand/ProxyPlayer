@@ -16,15 +16,18 @@
       },
       "Tmds.DBus.Generator": {
         "type": "Direct",
-        "requested": "[0.95.1, )",
-        "resolved": "0.95.1",
-        "contentHash": "f1EaF9XwJAEv2lkJaNoOeTPOguw7UdR0SgMQZtVLHmjSC8AKj738KLePn495ynjYaUUtZKciP5Eb1iC+mFFODg=="
+          "requested": "[0.95.2, )",
+          "resolved": "0.95.2",
+          "contentHash": "+q82JgFmaZC0d734M3RfY5FeIIiIaCUcehFWrX1/t2NbI8+vcVDCNrRx8Y3T+xPm1MMR/ZGXnIKxuvaDGOLLTA=="
       },
       "Tmds.DBus.Protocol": {
         "type": "Direct",
-        "requested": "[0.95.1, )",
-        "resolved": "0.95.1",
-        "contentHash": "IbGhqZAqqgB/DkT70+lAk4MNv95tZtsTMFQ+S3uGy0aTfOkGVeFjeNJsX8dBI/3+CPnO5XW6lRQKGeFEgHElKw=="
+          "requested": "[0.95.2, )",
+          "resolved": "0.95.2",
+          "contentHash": "4zlJSYYZGCKnF5xE1L5VEm5YsfjLTz5jlWBgvBxHA7yk8Lnys/6WWpeD+CWmNm4QmawR+x0xIbGGZNcMxcy8nQ=="
+      },
+        "kamitoolkit": {
+            "type": "Project"
       }
     }
   }

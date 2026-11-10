@@ -6,24 +6,23 @@ using Dalamud.Interface.Windowing;
 using ProxyPlayer.Media;
 using ProxyPlayer.Models;
 using ProxyPlayer.Shared;
-using ProxyPlayer.Windows.Layout;
+using ProxyPlayer.Windows.Legacy.Layout;
 
-namespace ProxyPlayer.Windows;
+namespace ProxyPlayer.Windows.Legacy;
 
-public class MainWindow : Window, IDisposable
+public sealed class MainWindow : Window, IDisposable
 {
+    private const string NoSessionSelectedText = "No media session selected.";
     private static readonly Vector2 CompactMinSize = new Vector2(375, 150);
     private static readonly Vector2 PortraitMinSize = new Vector2(375, 350);
 
-    private const string NoSessionSelectedText = "No media session selected.";
+    private readonly CompactLayout compactLayout;
+    private readonly IMediaSource mediaSource;
 
     private readonly Plugin plugin;
-    private readonly IMediaSource mediaSource;
-    private readonly TextureCache textures;
-    private readonly SessionListModal sessionListModal;
-
-    private readonly CompactLayout compactLayout;
     private readonly PortraitLayout portraitLayout;
+    private readonly SessionListModal sessionListModal;
+    private readonly TextureCache textures;
 
     public MainWindow(Plugin plugin, IMediaSource mediaSource)
         : base("ProxyPlayer##ProxyPlayerNowPlaying",
@@ -51,7 +50,7 @@ public class MainWindow : Window, IDisposable
         };
     }
 
-    public void Dispose() => GC.SuppressFinalize(this);
+    public void Dispose() => Close();
 
     public override void PreDraw()
     {
@@ -113,5 +112,11 @@ public class MainWindow : Window, IDisposable
                 ImGui.Text("Unknown display layout.");
                 break;
         }
+    }
+
+    public void Close()
+    {
+        sessionListModal.Close();
+        IsOpen = false;
     }
 }

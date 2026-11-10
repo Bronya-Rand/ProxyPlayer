@@ -8,18 +8,25 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
+using KamiToolKit;
 using ProxyPlayer.Helpers;
 using ProxyPlayer.Media;
 using ProxyPlayer.Media.MPRIS;
 using ProxyPlayer.Media.SMTC;
 using ProxyPlayer.Models;
 using ProxyPlayer.Utility;
-using ProxyPlayer.Windows;
+using ProxyPlayer.Windows.Legacy;
+using ProxyPlayer.Windows.Native;
 
 namespace ProxyPlayer;
 
 public sealed class Plugin : IAsyncDalamudPlugin
 {
+    private const string CommandName = "/pplayer";
+
+    // ImGui Windows
+    public readonly WindowSystem WindowSystem = new(Constants.PluginName);
+
     [PluginService]
     internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
 
@@ -31,12 +38,6 @@ public sealed class Plugin : IAsyncDalamudPlugin
 
     [PluginService]
     internal static IClientState ClientState { get; private set; } = null!;
-
-    [PluginService]
-    internal static IPlayerState PlayerState { get; private set; } = null!;
-
-    [PluginService]
-    internal static IDataManager DataManager { get; private set; } = null!;
 
     [PluginService]
     internal static IFramework Framework { get; private set; } = null!;
@@ -53,22 +54,23 @@ public sealed class Plugin : IAsyncDalamudPlugin
     [PluginService]
     internal static IChatGui ChatGui { get; private set; } = null!;
 
-    private const string CommandName = "/pplayer";
-
     public Configuration Configuration { get; private set; } = null!;
     public IMediaSource MediaSource { get; private set; } = null!;
     public ProxyProcessManager? ProxyProcessManager { get; private set; }
     public DtrDisplay DtrDisplay { get; private set; } = null!;
-
-    public readonly WindowSystem WindowSystem = new(Constants.PluginName);
     private ConfigWindow ConfigWindow { get; set; } = null!;
     private MainWindow MainWindow { get; set; } = null!;
 
-    public Task LoadAsync(CancellationToken cancellationToken)
+    // Native/KTK Windows
+    private ConfigNativeWindow ConfigNativeWindow { get; set; } = null!;
+    private MainNativeWindow MainNativeWindow { get; set; } = null!;
+
+    public async Task LoadAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        Configuration.OnUseNativeChanged += HandleUseNativeChanged;
 
         if (Util.IsWine())
             if (!AfUnixHelper.IsAfUnixSupported())
@@ -79,7 +81,7 @@ public sealed class Plugin : IAsyncDalamudPlugin
                     Content = Constants.UnsupportedWineBuild,
                     Type = NotificationType.Error
                 });
-                return Task.CompletedTask;
+                return;
             }
             else
                 MediaSource = new MprisMediaSource();
@@ -91,11 +93,17 @@ public sealed class Plugin : IAsyncDalamudPlugin
 
         DtrDisplay = new DtrDisplay(this, MediaSource);
 
+        // Setup ImGui windows
         ConfigWindow = new ConfigWindow(this);
         MainWindow = new MainWindow(this, MediaSource);
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
+
+        // Setup KTK
+        await KamiToolKitLibrary.InitializeAsync(PluginInterface, Constants.PluginName);
+        ConfigNativeWindow = new ConfigNativeWindow(this);
+        MainNativeWindow = new MainNativeWindow(this, MediaSource);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
@@ -118,11 +126,9 @@ public sealed class Plugin : IAsyncDalamudPlugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
 
         Framework.Update += DtrDisplay.UpdateDtr;
-
-        return Task.CompletedTask;
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         PluginInterface.UiBuilder.Draw -= WindowSystem.Draw;
         PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfigUi;
@@ -133,14 +139,16 @@ public sealed class Plugin : IAsyncDalamudPlugin
 
         ConfigWindow.Dispose();
         MainWindow.Dispose();
+        await ConfigNativeWindow.DisposeAsync();
+        await MainNativeWindow.DisposeAsync();
         DtrDisplay.Dispose();
+        Configuration.OnUseNativeChanged -= HandleUseNativeChanged;
 
         MediaSource.Dispose();
         ProxyProcessManager?.Dispose();
+        await KamiToolKitLibrary.DisposeAsync();
 
         CommandManager.RemoveHandler(CommandName);
-
-        return ValueTask.CompletedTask;
     }
 
     private static void PrintChatError(string message) => ChatGui.PrintError($"[{Constants.PluginName}] {message}");
@@ -254,6 +262,47 @@ public sealed class Plugin : IAsyncDalamudPlugin
         OnProxyCommand(command, trimmedArgs);
     }
 
-    public void ToggleConfigUi() => ConfigWindow.Toggle();
-    public void ToggleMainUi() => MainWindow.Toggle();
+    public void CloseAllUi()
+    {
+        // ImGui
+        MainWindow.Close();
+        ConfigWindow.IsOpen = false;
+
+        // Native
+        if (MainNativeWindow.IsOpen)
+            MainNativeWindow.CloseAddon();
+        if (ConfigNativeWindow.IsOpen)
+            ConfigNativeWindow.Close();
+    }
+
+    public void ToggleConfigUi()
+    {
+        if (Configuration.UseNative)
+            ConfigNativeWindow.Toggle();
+        else
+            ConfigWindow.Toggle();
+    }
+
+    public void ToggleMainUi()
+    {
+        if (!ClientState.IsLoggedIn) return;
+
+        if (Configuration.UseNative)
+            MainNativeWindow.Toggle();
+        else
+            MainWindow.Toggle();
+    }
+
+    private void HandleUseNativeChanged(bool useNative)
+    {
+        Framework.Run(() =>
+        {
+            CloseAllUi();
+
+            if (useNative)
+                ConfigNativeWindow.Open();
+            else
+                ConfigWindow.IsOpen = true;
+        });
+    }
 }

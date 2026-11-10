@@ -8,7 +8,7 @@ using ProxyPlayer.Models;
 using ProxyPlayer.Shared;
 using ProxyPlayer.Utility;
 
-namespace ProxyPlayer.Windows.Layout
+namespace ProxyPlayer.Windows.Legacy.Layout
 {
     /// <summary>
     /// Renders the player in a portrait layout

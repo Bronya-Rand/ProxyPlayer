@@ -5,7 +5,7 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ProxyPlayer.Models;
 
-namespace ProxyPlayer.Windows;
+namespace ProxyPlayer.Windows.Legacy;
 
 public class ConfigWindow : Window, IDisposable
 {
@@ -16,7 +16,7 @@ public class ConfigWindow : Window, IDisposable
         Flags = ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;
 
-        Size = new Vector2(300, 80);
+        Size = new Vector2(300, 120);
         SizeCondition = ImGuiCond.Always;
 
         configuration = plugin.Configuration;
@@ -26,6 +26,7 @@ public class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
+        // Display Layout
         var displayLayout = configuration.PlayerDisplayLayout;
         var displayLayoutPlaceholder = displayLayout.ToFriendlyString();
         ImGui.Text("Player Layout:");
@@ -40,6 +41,14 @@ public class ConfigWindow : Window, IDisposable
                     configuration.Save();
                 }
             }
+        }
+
+        // KTK Toggle
+        var useNative = configuration.UseNative;
+        if (ImGui.Checkbox("Use Native UI over ImGui###ProxyPlayerNativeCheckbox", ref useNative))
+        {
+            configuration.UseNative = useNative;
+            configuration.Save();
         }
     }
 }
