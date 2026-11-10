@@ -19,7 +19,7 @@ public sealed class CompactPlayerNode : LayoutResNode
     }
 
     /// <inheritdoc />
-    public override Vector2 PreferredWindowSize => new(420f, 220f);
+    public override Vector2 PreferredWindowSize => new(470f, 220f);
 
     /// <inheritdoc />
     protected override NodeBase BuildLayout()

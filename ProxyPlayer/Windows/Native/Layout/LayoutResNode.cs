@@ -33,6 +33,7 @@ public abstract class LayoutResNode : ResNode
     protected readonly TextNode SessionNameNode;
     protected readonly TextButtonNode ShuffleButton;
     protected readonly TextButtonNode SourcesButton;
+    protected readonly TextButtonNode StopButton;
     protected readonly HorizontalFlexNode TimeRow;
     protected readonly TextNode TitleNode;
     protected LayoutListNode RootLayout = null!;
@@ -86,6 +87,8 @@ public abstract class LayoutResNode : ResNode
         };
         PlayPauseButton = new TextButtonNode
             { String = "Play", Width = 72f, Height = 26f, OnClick = () => _ = MediaSource.PlayPauseAsync() };
+        StopButton = new TextButtonNode
+            { String = "Stop", Width = 72f, Height = 26f, OnClick = () => _ = MediaSource.StopAsync() };
         ShuffleButton = new TextButtonNode
             { String = "Shuffle", Width = 72f, Height = 26f, OnClick = () => _ = MediaSource.ToggleShuffleAsync() };
         RepeatButton = new TextButtonNode
@@ -111,9 +114,9 @@ public abstract class LayoutResNode : ResNode
                 new HorizontalListNode
                 {
                     Height = 26f,
-                    ItemSpacing = 6f,
+                    ItemSpacing = 4f,
                     FitToContentWidth = true,
-                    InitialNodes = [ShuffleButton, PrevButton, PlayPauseButton, NextButton, RepeatButton]
+                    InitialNodes = [ShuffleButton, PrevButton, PlayPauseButton, StopButton, NextButton, RepeatButton]
                 }
             ]
         };
@@ -153,8 +156,9 @@ public abstract class LayoutResNode : ResNode
                 ProgressBarNode.IsVisible = false;
             }
 
-            ShuffleButton.IsVisible = value.SupportsShuffling;
-            RepeatButton.IsVisible = value.SupportsRepeat;
+            ShuffleButton.IsEnabled = value.SupportsShuffling;
+            RepeatButton.IsEnabled = value.SupportsRepeat;
+            StopButton.IsEnabled = value.SupportsStop;
             ShuffleButton.TextTooltip = value.IsShuffleActive ? "Shuffle: On" : "Shuffle: Off";
             RepeatButton.TextTooltip = value.RepeatMode switch
             {

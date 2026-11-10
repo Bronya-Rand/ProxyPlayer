@@ -54,13 +54,13 @@ public sealed class MainNativeWindow : NativeAddon
     {
         base.OnSetup(addon, atkValueSpan);
 
-        SetWindowSize(new Vector2(420f, 220f));
+        SetWindowSize(new Vector2(470f, 220f));
         playerLayouts[DisplayLayout.Compact] = new CompactPlayerNode(mediaSource, ContentSize)
         {
             OnRequestSessionList = () => sessionListModal.Open()
         };
 
-        SetWindowSize(new Vector2(420f, 420f));
+        SetWindowSize(new Vector2(480f, 420f));
         playerLayouts[DisplayLayout.Portrait] = new PortraitPlayerNode(mediaSource, ContentSize)
         {
             OnRequestSessionList = () => sessionListModal.Open()
