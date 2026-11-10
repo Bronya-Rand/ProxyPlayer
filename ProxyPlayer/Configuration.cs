@@ -9,7 +9,7 @@ public class Configuration : IPluginConfiguration
 {
     private DisplayLayout playerDisplayLayout = DisplayLayout.Compact;
 
-    private bool useNative = true;
+    private bool useNative;
 
     public DisplayLayout PlayerDisplayLayout
     {

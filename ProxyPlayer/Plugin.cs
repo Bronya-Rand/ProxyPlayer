@@ -69,7 +69,8 @@ public sealed class Plugin : IAsyncDalamudPlugin
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        Configuration = PluginInterface.GetPluginConfig() as Configuration
+                        ?? new Configuration { UseNative = true };
         Configuration.OnUseNativeChanged += HandleUseNativeChanged;
 
         if (Util.IsWine())
