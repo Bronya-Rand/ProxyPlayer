@@ -26,7 +26,7 @@ public sealed class PortraitPlayerNode : LayoutResNode
     }
 
     /// <inheritdoc />
-    public override Vector2 PreferredWindowSize => new(420f, 420f);
+    public override Vector2 PreferredWindowSize => new(480f, 420f);
 
     /// <inheritdoc />
     protected override NodeBase BuildLayout()
